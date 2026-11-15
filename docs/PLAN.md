@@ -36,7 +36,7 @@ tests/         unit/ integration/ e2e/ fixtures/github/ fixtures/generated/
 - Unit: excludes hidden, fork, archived, private, two self repos (S6, rules 1-2); new repo appears (S5); sort pushedAt desc (rule 5); featured order, hidden featured skipped (rule 4); override replaces title/description/screenshot only (rule 6); repo name `^[A-Za-z0-9._-]+$`; homepage kept only if https; pagination.
 - Integration: `refresh.ts` as child process vs `node:http` stub (`GITHUB_API_URL`), temp out dir, compare `projects.json` (S4). Stub 500 or 0 repos: output byte-identical, exit non-zero (S10, rule 13). Write to temp then rename after all fetches succeed.
 
-### Slice 2 — README to safe HTML
+### Slice 2 — README to safe HTML — DONE (PR #4, merged 2026-11-16)
 - Files: `scripts/lib/readme.ts`, wired into refresh (`readmeHtml`).
 - Unit: `<script>`, raw HTML, `on*`, `javascript:`/`data:` hrefs removed; relative images -> `raw.githubusercontent.com/<owner>/<repo>/<branch>/...`; relative links -> blob URL; images on any https host kept (badges), non-https images dropped (rule 7); clobber prefix; missing README -> "" (S3, rule 7).
 
