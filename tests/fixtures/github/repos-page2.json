@@ -16,7 +16,8 @@
       "login": "LeongJinZhou"
     },
     "id": 1,
-    "node_id": "x"
+    "node_id": "x",
+    "default_branch": "main"
   },
   {
     "name": "old-archived",
@@ -35,7 +36,8 @@
       "login": "LeongJinZhou"
     },
     "id": 1,
-    "node_id": "x"
+    "node_id": "x",
+    "default_branch": "main"
   },
   {
     "name": "Print",
@@ -54,7 +56,8 @@
       "login": "LeongJinZhou"
     },
     "id": 1,
-    "node_id": "x"
+    "node_id": "x",
+    "default_branch": "main"
   },
   {
     "name": "hidden-one",
@@ -73,7 +76,8 @@
       "login": "LeongJinZhou"
     },
     "id": 1,
-    "node_id": "x"
+    "node_id": "x",
+    "default_branch": "main"
   },
   {
     "name": "Pocket-G",
@@ -92,6 +96,7 @@
       "login": "LeongJinZhou"
     },
     "id": 1,
-    "node_id": "x"
+    "node_id": "x",
+    "default_branch": "main"
   }
 ]

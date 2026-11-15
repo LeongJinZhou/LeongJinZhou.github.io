@@ -48,3 +48,24 @@ Sources: npm registry, GitHub Advisory DB, action SHAs resolved via gh on 2026-1
 - Check Astro 7 `security.csp` status for inline script hashing.
 - frame-ancestors ignored in meta CSP (accepted low risk).
 - `<meta name="referrer" content="strict-origin-when-cross-origin">`; Enforce HTTPS on.
+
+## Slice 2 deps (2026-11-15)
+Sources: GitHub Advisory DB (global + repo advisories), `npm audit` (0 vulns), `osv-scanner` on package-lock.json (no issues), `npm audit signatures` (all verified).
+
+| Package | Locked | Latest | Advisories |
+|---|---|---|---|
+| unified | 11.0.5 | 11.0.5 | none |
+| remark-parse | 11.0.0 | 11.0.0 | none |
+| remark-rehype | 11.1.2 | 11.1.2 | none |
+| rehype-sanitize | 6.0.0 | 6.0.0 | none |
+| rehype-stringify | 10.0.1 | 10.0.1 | none |
+| micromark | 4.0.3 | 4.0.3 | none |
+| mdast-util-from-markdown | 2.1.0 | 2.1.0 | none |
+| mdast-util-to-hast | 13.2.2 | 13.2.2 | GHSA-4fh9-h7wg-q85m (medium, unsanitized `class`, >=13.0.0 <13.2.1) - patched in our version |
+| hast-util-sanitize | 5.0.2 | 5.0.2 | none |
+| hast-util-to-html | 9.0.6 | 9.0.6 | none |
+
+- Genuine: all published by `wooorm` (maintainers wooorm/remcohaszing/johno/kmck, unchanged), repos syntax-tree/rehypejs/remarkjs/micromark; releases match GitHub tags.
+- Fresh releases: mdast-util-to-hast 13.2.2 (2026-11-13, footnote backreference fix), hast-util-to-html 9.0.6 (2026-10-29), micromark 4.0.3 (2026-09-26). Same maintainer, small diffs; keep lockfile pinned, no auto-bump.
+- Sanitiser: no known defaultSchema bypass. Upstream rule: deviate from defaultSchema only by narrowing. Our schema only narrows `href`/`src` to http(s). Sanitize runs last before stringify (after URL rewrite) - keep it that way. Never add `allowDangerousHtml`/`rehype-raw` without re-review.
+- Lesson: patched GHSA-4fh9 shows mdast-util-to-hast output is untrusted; always sanitize after it.

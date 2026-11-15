@@ -17,7 +17,8 @@
       "login": "LeongJinZhou"
     },
     "id": 1,
-    "node_id": "x"
+    "node_id": "x",
+    "default_branch": "trunk"
   },
   {
     "name": "OCR1",
@@ -36,7 +37,8 @@
       "login": "LeongJinZhou"
     },
     "id": 1,
-    "node_id": "x"
+    "node_id": "x",
+    "default_branch": "main"
   },
   {
     "name": "LeongJinZhou",
@@ -55,7 +57,8 @@
       "login": "LeongJinZhou"
     },
     "id": 1,
-    "node_id": "x"
+    "node_id": "x",
+    "default_branch": "main"
   },
   {
     "name": "LeongJinZhou.github.io",
@@ -74,7 +77,8 @@
       "login": "LeongJinZhou"
     },
     "id": 1,
-    "node_id": "x"
+    "node_id": "x",
+    "default_branch": "main"
   },
   {
     "name": "some-fork",
@@ -93,6 +97,7 @@
       "login": "LeongJinZhou"
     },
     "id": 1,
-    "node_id": "x"
+    "node_id": "x",
+    "default_branch": "main"
   }
 ]

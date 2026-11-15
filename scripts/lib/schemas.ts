@@ -15,9 +15,12 @@ export const RepoSchema = z.object({
   archived: z.boolean(),
   private: z.boolean(),
   owner: z.object({ login: z.string() }),
+  default_branch: z.string().min(1),
 })
 export type Repo = z.infer<typeof RepoSchema>
 export const ReposSchema = z.array(RepoSchema)
+
+export const ReadmeSchema = z.object({ content: z.string(), encoding: z.string(), path: z.string() })
 
 export const LanguagesSchema = z.record(z.string(), z.number().nonnegative())
 export type Languages = z.infer<typeof LanguagesSchema>

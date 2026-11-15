@@ -1,7 +1,8 @@
 import { readdirSync, readFileSync, renameSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { z } from 'zod'
-import { fetchLanguages, fetchRepos } from './lib/github.ts'
+import { fetchLanguages, fetchReadme, fetchRepos, OWNER } from './lib/github.ts'
+import { renderReadme } from './lib/readme.ts'
 import { buildProjects, selectRepos } from './lib/select.ts'
 import { OverrideSchema, ProjectSchema, REPO_NAME, type Languages, type Override } from './lib/schemas.ts'
 
@@ -43,9 +44,20 @@ export async function refresh(o: RefreshOpts): Promise<number> {
   const repos = selectRepos(await fetchRepos(gh), hidden)
   if (repos.length === 0) throw new Error('No projects fetched; keeping previous data')
   const languages: Record<string, Languages> = Object.create(null)
-  for (const r of repos) languages[r.name] = await fetchLanguages(r.name, gh)
+  const readmes: Record<string, string> = Object.create(null)
+  for (const r of repos) {
+    languages[r.name] = await fetchLanguages(r.name, gh)
+    const { text, dir } = await fetchReadme(r.name, gh)
+    try {
+      readmes[r.name] = renderReadme(text, { owner: OWNER, repo: r.name, branch: r.default_branch, dir })
+    } catch {
+      console.error(`README render failed: ${r.name}`) // no stack: nothing sensitive in logs
+      readmes[r.name] = ''
+    }
+  }
 
-  const projects = z.array(ProjectSchema).parse(buildProjects(repos, languages, { featured, overrides }))
+  const built = buildProjects(repos, languages, { featured, overrides }).map((p) => ({ ...p, readmeHtml: readmes[p.name] ?? '' }))
+  const projects = z.array(ProjectSchema).parse(built)
   mkdirSync(o.outDir, { recursive: true })
   const tmp = join(o.outDir, 'projects.json.tmp')
   try {
