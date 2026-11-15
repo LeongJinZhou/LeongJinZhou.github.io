@@ -1,0 +1,6 @@
+{
+  "qiu-cpdc-career-portal": "# Career Portal\n\n![shot](docs/shot.png)\n\n[Guide](docs/GUIDE.md) and [top](#top)\n\n![badge](https://img.shields.io/badge/ts-strict-blue.svg)\n",
+  "Pocket-G": "# Pocket\n\n<script>alert('xss')</script>\n\n<img src=x onerror=alert(1)>\n\n[bad](javascript:alert(1)) ![d](data:image/png;base64,AAAA) ![h](http://evil.test/a.png)\n\nsafe text\n",
+  "nested": "![s](shot.png)\n",
+  "unicode": "# 你好 😀\n"
+}

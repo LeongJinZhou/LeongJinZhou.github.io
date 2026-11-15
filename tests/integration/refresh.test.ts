@@ -73,7 +73,7 @@ describe('refresh.ts child process (S4, S5, S10, rule 13)', () => {
     await run()
     expect(readFileSync(join(out, 'projects.json')).equals(first)).toBe(true)
   })
-  it.each(['error500', 'empty', 'languages500'] as const)('%s: output untouched, exit non-zero (S10)', async (mode) => {
+  it.each(['error500', 'empty', 'languages500', 'readme500'] as const)('%s: output untouched, exit non-zero (S10)', async (mode) => {
     await setup('ok')
     expect((await run()).status).toBe(0)
     const before = readFileSync(join(out, 'projects.json'))
@@ -84,6 +84,18 @@ describe('refresh.ts child process (S4, S5, S10, rule 13)', () => {
     expect(r.stderr).not.toContain('tok-should-not-print')
     expect(readFileSync(join(out, 'projects.json')).equals(before)).toBe(true)
     expect(readdirSync(out)).toEqual(['projects.json'])
+  })
+  it('malicious README is sanitised in projects.json; relative URLs use the default branch (S3, rule 7)', async () => {
+    await setup('ok')
+    expect((await run()).status).toBe(0)
+    const raw = readFileSync(join(out, 'projects.json'), 'utf8')
+    const list = JSON.parse(raw) as { name: string; readmeHtml: string }[]
+    const by = (n: string) => list.find((p) => p.name === n)?.readmeHtml ?? ''
+    for (const bad of ['<script', 'onerror', 'javascript:', 'data:image', 'evil.test']) expect(raw).not.toContain(bad)
+    expect(by('Pocket-G')).toContain('safe text')
+    expect(by('qiu-cpdc-career-portal')).toContain('src="https://raw.githubusercontent.com/LeongJinZhou/qiu-cpdc-career-portal/trunk/docs/shot.png"')
+    expect(by('qiu-cpdc-career-portal')).toContain('href="https://github.com/LeongJinZhou/qiu-cpdc-career-portal/blob/trunk/docs/GUIDE.md"')
+    expect(by('OCR1')).toBe('') // 404 -> missing README
   })
   it('error with no previous file creates nothing', async () => {
     await setup('error500')

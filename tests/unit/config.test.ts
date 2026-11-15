@@ -22,9 +22,13 @@ describe('schemas', () => {
 })
 
 describe('schema hardening', () => {
-  const repo = { name: 'r', description: null, topics: [], language: null, homepage: null, pushed_at: '2026-01-01T00:00:00Z', stargazers_count: 0, fork: false, archived: false, private: false, owner: { login: 'a' } }
+  const repo = { name: 'r', description: null, topics: [], language: null, homepage: null, pushed_at: '2026-01-01T00:00:00Z', stargazers_count: 0, fork: false, archived: false, private: false, owner: { login: 'a' }, default_branch: 'main' }
   it.each(['.', '..', 'a b', ''])('REPO_NAME rejects %j', (n) => expect(REPO_NAME.test(n)).toBe(false))
   it.each(['.github', 'a.b_c-d', '...'])('REPO_NAME accepts %j', (n) => expect(REPO_NAME.test(n)).toBe(true))
+  it('default_branch is required and non-empty', () => {
+    expect(() => RepoSchema.parse({ ...repo, default_branch: undefined })).toThrow()
+    expect(() => RepoSchema.parse({ ...repo, default_branch: '' })).toThrow()
+  })
   it('pushed_at must be an ISO datetime', () => {
     expect(RepoSchema.parse(repo).pushed_at).toBe('2026-01-01T00:00:00Z')
     expect(() => RepoSchema.parse({ ...repo, pushed_at: 'yesterday' })).toThrow()

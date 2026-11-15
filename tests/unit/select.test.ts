@@ -13,6 +13,7 @@ const mk = (name: string, x: Partial<Repo> = {}): Repo => ({
   language: null,
   homepage: null,
   pushed_at: '2026-01-01T00:00:00Z',
+  default_branch: 'main',
   stargazers_count: 0,
   fork: false,
   archived: false,
