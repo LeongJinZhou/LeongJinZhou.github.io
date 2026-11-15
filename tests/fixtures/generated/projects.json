@@ -1,0 +1,220 @@
+[
+  {
+    "name": "qiu-cpdc-career-portal",
+    "title": "QIU CPDC Career Portal",
+    "description": "Multi-role career and industrial placement platform with AI learning and a gamified XP ledger",
+    "topics": [
+      "nextjs",
+      "prisma",
+      "firebase"
+    ],
+    "language": "TypeScript",
+    "languages": {
+      "TypeScript": 91000,
+      "CSS": 6000,
+      "JavaScript": 3000
+    },
+    "homepage": "https://qiu-cpdc-career-portal--qiu-cpdc-career-portal.asia-southeast1.hosted.app/",
+    "repoUrl": "https://github.com/LeongJinZhou/qiu-cpdc-career-portal",
+    "pushedAt": "2026-11-14T08:00:00Z",
+    "stars": 2,
+    "screenshot": "qiu-cpdc-career-portal.webp",
+    "featured": true,
+    "readmeHtml": "<h1>QIU CPDC Career Portal</h1>\n<p>Fixture README for QIU CPDC Career Portal.</p>\n<h2>Setup</h2>\n<ul>\n<li>Install</li>\n<li>Run</li>\n</ul>\n<p><img src=\"https://img.shields.io/badge/status-active-green.svg\" alt=\"status badge\"></p>\n<blockquote>\n<p>Quoted note about the portal.</p>\n</blockquote>\n<p>Run <code>npm run dev</code> to start.</p>\n<table>\n<thead>\n<tr><th>Role</th><th>Can do</th></tr>\n</thead>\n<tbody>\n<tr><td>Student</td><td>Apply for placements and track an application through every approval stage</td></tr>\n<tr><td>Admin</td><td>Manage companies, approvals and the XP ledger</td></tr>\n</tbody>\n</table>\n<pre><code>npm install\nnpm run build\n</code></pre>"
+  },
+  {
+    "name": "qiu-sld-campus-hub",
+    "title": "QIU SLD Campus Hub",
+    "description": "Club hub plus digital Student Life Division forms and approvals",
+    "topics": [
+      "laravel",
+      "vue",
+      "inertia",
+      "tailwind"
+    ],
+    "language": "PHP",
+    "languages": {
+      "PHP": 60000,
+      "Vue": 30000,
+      "Blade": 6000
+    },
+    "homepage": null,
+    "repoUrl": "https://github.com/LeongJinZhou/qiu-sld-campus-hub",
+    "pushedAt": "2026-11-12T08:00:00Z",
+    "stars": 1,
+    "screenshot": null,
+    "featured": true,
+    "readmeHtml": "<h1>QIU SLD Campus Hub</h1>\n<p>Fixture README for QIU SLD Campus Hub.</p>\n<h2>Setup</h2>\n<ul>\n<li>Install</li>\n<li>Run</li>\n</ul>\n"
+  },
+  {
+    "name": "sld-event-verifier",
+    "title": "SLD Event Verifier",
+    "description": "Merges attendance and survey data to verify student event participation, fully in the browser",
+    "topics": [
+      "vite",
+      "firebase"
+    ],
+    "language": "JavaScript",
+    "languages": {
+      "JavaScript": 40000,
+      "HTML": 4000,
+      "CSS": 2000
+    },
+    "homepage": "https://sld-event-verifier.web.app/",
+    "repoUrl": "https://github.com/LeongJinZhou/sld-event-verifier",
+    "pushedAt": "2026-11-10T08:00:00Z",
+    "stars": 0,
+    "screenshot": null,
+    "featured": true,
+    "readmeHtml": "<h1>SLD Event Verifier</h1>\n<p>Fixture README for SLD Event Verifier.</p>\n<h2>Setup</h2>\n<ul>\n<li>Install</li>\n<li>Run</li>\n</ul>\n"
+  },
+  {
+    "name": "university-ims-erp",
+    "title": "University IMS / ERP",
+    "description": "Programmes, prerequisite graphs and constraint-based timetabling",
+    "topics": [
+      "nestjs",
+      "react",
+      "prisma",
+      "postgresql",
+      "or-tools"
+    ],
+    "language": "TypeScript",
+    "languages": {
+      "TypeScript": 120000,
+      "Python": 8000
+    },
+    "homepage": null,
+    "repoUrl": "https://github.com/LeongJinZhou/university-ims-erp",
+    "pushedAt": "2026-11-09T08:00:00Z",
+    "stars": 3,
+    "screenshot": null,
+    "featured": true,
+    "readmeHtml": "<h1>University IMS / ERP</h1>\n<p>Fixture README for University IMS / ERP.</p>\n<h2>Setup</h2>\n<ul>\n<li>Install</li>\n<li>Run</li>\n</ul>\n"
+  },
+  {
+    "name": "Healthcare-Analysis-POC",
+    "title": "Biomarker Observatory",
+    "description": "Proof of concept: longitudinal biomarker analytics with an AI clinical assistant",
+    "topics": [
+      "nextjs",
+      "bigquery",
+      "vertex-ai"
+    ],
+    "language": "TypeScript",
+    "languages": {
+      "TypeScript": 50000,
+      "Python": 5000
+    },
+    "homepage": null,
+    "repoUrl": "https://github.com/LeongJinZhou/Healthcare-Analysis-POC",
+    "pushedAt": "2026-10-30T08:00:00Z",
+    "stars": 0,
+    "screenshot": null,
+    "featured": true,
+    "readmeHtml": "<h1>Biomarker Observatory</h1>\n<p>Fixture README for Biomarker Observatory.</p>\n<h2>Setup</h2>\n<ul>\n<li>Install</li>\n<li>Run</li>\n</ul>\n"
+  },
+  {
+    "name": "SmartRecipe-ContextAware-iOS",
+    "title": "SmartRecipe iOS",
+    "description": "Recipe recommendations, food image analysis and ingredient substitutions",
+    "topics": [
+      "swift",
+      "supabase",
+      "openai",
+      "gemini"
+    ],
+    "language": "Swift",
+    "languages": {
+      "Swift": 80000
+    },
+    "homepage": null,
+    "repoUrl": "https://github.com/LeongJinZhou/SmartRecipe-ContextAware-iOS",
+    "pushedAt": "2026-10-20T08:00:00Z",
+    "stars": 0,
+    "screenshot": null,
+    "featured": true,
+    "readmeHtml": "<h1>SmartRecipe iOS</h1>\n<p>Fixture README for SmartRecipe iOS.</p>\n<h2>Setup</h2>\n<ul>\n<li>Install</li>\n<li>Run</li>\n</ul>\n"
+  },
+  {
+    "name": "Pocket-G",
+    "title": "Pocket-G",
+    "description": "Secure mobile web client for a remote AI coding CLI over Tailscale",
+    "topics": [
+      "nodejs",
+      "xterm",
+      "firebase"
+    ],
+    "language": "JavaScript",
+    "languages": {
+      "JavaScript": 30000,
+      "CSS": 3000
+    },
+    "homepage": null,
+    "repoUrl": "https://github.com/LeongJinZhou/Pocket-G",
+    "pushedAt": "2026-10-10T08:00:00Z",
+    "stars": 4,
+    "screenshot": null,
+    "featured": true,
+    "readmeHtml": "<h1>Pocket-G</h1>\n<p>Fixture README for Pocket-G.</p>\n<h2>Setup</h2>\n<ul>\n<li>Install</li>\n<li>Run</li>\n</ul>\n"
+  },
+  {
+    "name": "OCR1",
+    "title": "Medical Report OCR",
+    "description": "Digitises medical reports from photos and PDFs",
+    "topics": [
+      "flutter",
+      "dart"
+    ],
+    "language": "Dart",
+    "languages": {
+      "Dart": 45000
+    },
+    "homepage": null,
+    "repoUrl": "https://github.com/LeongJinZhou/OCR1",
+    "pushedAt": "2026-09-01T08:00:00Z",
+    "stars": 0,
+    "screenshot": null,
+    "featured": true,
+    "readmeHtml": ""
+  },
+  {
+    "name": "qiu-ai-video-2026",
+    "title": "qiu-ai-video-2026",
+    "description": "AI video production pipeline for QIU",
+    "topics": [
+      "python",
+      "ai"
+    ],
+    "language": "Python",
+    "languages": {
+      "Python": 20000
+    },
+    "homepage": null,
+    "repoUrl": "https://github.com/LeongJinZhou/qiu-ai-video-2026",
+    "pushedAt": "2026-11-15T08:00:00Z",
+    "stars": 0,
+    "screenshot": null,
+    "featured": false,
+    "readmeHtml": "<h1>qiu-ai-video-2026</h1>\n<p>Fixture README for qiu-ai-video-2026.</p>\n<h2>Setup</h2>\n<ul>\n<li>Install</li>\n<li>Run</li>\n</ul>\n"
+  },
+  {
+    "name": "hidden-demo",
+    "title": "hidden-demo",
+    "description": "Listed in the fixture hide-list; the site must not show it",
+    "topics": [
+      "secret"
+    ],
+    "language": "Rust",
+    "languages": {
+      "Rust": 1000
+    },
+    "homepage": null,
+    "repoUrl": "https://github.com/LeongJinZhou/hidden-demo",
+    "pushedAt": "2026-11-16T00:00:00Z",
+    "stars": 0,
+    "screenshot": null,
+    "featured": false,
+    "readmeHtml": "<h1>hidden-demo</h1>\n<p>Fixture README for hidden-demo.</p>\n<h2>Setup</h2>\n<ul>\n<li>Install</li>\n<li>Run</li>\n</ul>\n"
+  }
+]

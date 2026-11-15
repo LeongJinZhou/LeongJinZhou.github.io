@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures.ts'
 
 // Proves the CSP is really enforced, so "zero CSP errors" in smoke is not vacuous.
 test('meta CSP and referrer present; inline script is blocked', async ({ page }) => {

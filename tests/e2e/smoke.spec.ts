@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures.ts'
 
 test('home loads, h1 has name, no CSP console errors', async ({ page }) => {
   const problems: string[] = []
@@ -7,7 +7,7 @@ test('home loads, h1 has name, no CSP console errors', async ({ page }) => {
   })
   page.on('pageerror', (e) => problems.push(e.message))
   await page.goto('/')
-  await expect(page).toHaveTitle('AI Technologist at QIU')
+  await expect(page).toHaveTitle('Leong Jin Zhou — AI Technologist at QIU')
   await expect(page.locator('h1')).toHaveText('Leong Jin Zhou')
   expect(problems).toEqual([])
 })
