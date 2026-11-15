@@ -17,3 +17,5 @@ docs/STATUS.md
 *.csv
 transcripts/
 prompts/
+generated/
+public/shots/
