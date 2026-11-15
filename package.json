@@ -4,14 +4,14 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=24"
+    "node": ">=24.2"
   },
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "lint": "eslint .",
-    "typecheck": "astro check && tsc --noEmit",
+    "typecheck": "astro check && tsc --noEmit && tsc -p scripts",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
@@ -19,7 +19,8 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "astro": "7.4.12"
+    "astro": "7.4.12",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",

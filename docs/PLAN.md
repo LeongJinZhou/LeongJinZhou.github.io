@@ -25,7 +25,7 @@ tests/         unit/ integration/ e2e/ fixtures/github/ fixtures/generated/
 
 ## 2. Slices (build order; each one PR, test-first)
 
-### Slice 0 — Scaffold + green "check" (ci.yml)
+### Slice 0 — Scaffold + green "check" (ci.yml) — DONE (PR #1, merged 2026-11-15)
 - Files: package.json + lockfile, astro.config, tsconfig, eslint, vitest, playwright config (webServer `astro preview`, chromium, 375 + 1280), `src/pages/index.astro`, `src/layouts/Base.astro` (meta CSP + referrer), ci.yml, dependabot.yml, CLAUDE.md tech stack, `.gitignore` += `generated/`, `public/shots/`.
 - Tests first: e2e smoke (loads, `<h1>` has name, zero CSP console errors).
 - Accept: `check` green on PR; `npm audit --audit-level=moderate` clean.
