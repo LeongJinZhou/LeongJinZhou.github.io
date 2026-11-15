@@ -4,7 +4,9 @@
 Public portfolio site for Leong Jin Zhou, AI Technologist at QIU. Lists his public GitHub projects and refreshes itself daily. Details in docs/SPEC.md.
 
 ## Tech stack
-- To be fixed in docs/SPEC.md (static site on GitHub Pages)
+- Astro 7 static site (GitHub Pages), TypeScript strict, Node 24, no client framework
+- Vitest (v8 coverage 80%) + Playwright (chromium, axe) + ESLint
+- Scripts: plain .ts run with node (type stripping); generated data on orphan `data` branch
 
 ## Commands
 - Run: npm run dev
