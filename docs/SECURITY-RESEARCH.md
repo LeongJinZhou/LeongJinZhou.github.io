@@ -69,3 +69,26 @@ Sources: GitHub Advisory DB (global + repo advisories), `npm audit` (0 vulns), `
 - Fresh releases: mdast-util-to-hast 13.2.2 (2026-11-13, footnote backreference fix), hast-util-to-html 9.0.6 (2026-10-29), micromark 4.0.3 (2026-09-26). Same maintainer, small diffs; keep lockfile pinned, no auto-bump.
 - Sanitiser: no known defaultSchema bypass. Upstream rule: deviate from defaultSchema only by narrowing. Our schema only narrows `href`/`src` to http(s). Sanitize runs last before stringify (after URL rewrite) - keep it that way. Never add `allowDangerousHtml`/`rehype-raw` without re-review.
 - Lesson: patched GHSA-4fh9 shows mdast-util-to-hast output is untrusted; always sanitize after it.
+
+## Slice 3 deps (2026-11-16)
+Sources: GitHub Advisory DB (global + basic-ftp repo advisories), `npm audit --audit-level=moderate` (0 vulns), `osv-scanner` on package-lock.json (769 packages, no issues), `npm audit signatures` (700 verified signatures, 186 verified attestations).
+
+| Package | Locked | Latest | Advisories |
+|---|---|---|---|
+| @axe-core/playwright | 4.14.0 | 4.14.0 | none |
+| axe-core | 4.14.0 | 4.14.0 | none |
+| @lhci/cli | 0.16.1 | 0.16.1 | none |
+| lighthouse | 13.6.0 | 13.6.0 | none |
+| puppeteer-core | 25.17.0 | - | none |
+| proxy-agent / pac-proxy-agent / get-uri | 8.0.2 / 9.1.0 / 8.0.1 | - | none |
+| basic-ftp (override) | 6.2.6 | 6.2.6 | 9 advisories 2026-02..11 (1 critical, 6 high, 2+1 medium); all fixed by 6.2.6 incl. GHSA-2w5v-vj22-jp27 (path traversal, <6.2.5) |
+| ws | 8.23.0 | - | GHSA-96hv-2xvq-fx4p (high, <8.21.0), GHSA-58qx-3vcg-4xpx (medium, <8.20.1) - patched in our version |
+| body-parser | 1.20.9 | - | GHSA-27r3-jxmh-p828 (high, <1.20.9) - patched in our version |
+| express | 4.22.3 | - | GHSA-pj86-cfqh-vqx6 (low, <4.22.0) - patched in our version |
+
+- Genuine: axe packages by Deque (dylanb, wilcofiers, dqlabs, npmdeque), repo dequelabs. lhci/lighthouse by Lighthouse team (paulirish, hoten, patrickhulce, adamraine), repos GoogleChrome/lighthouse-ci and GoogleChrome/lighthouse. Names exact, no typosquats.
+- basic-ftp 6.2.6 genuine: only maintainer patrickjuchli; published 2026-11-04 by GitHub Actions trusted publisher with SLSA provenance (since 6.2.5), approver patrickjuchli; matches tag v6.2.6.
+- Override safety: get-uri 8.0.1 asks `basic-ftp ^5.3.1`; override forces a major bump. No 5.x fix exists (GHSA-c475 covers all <=6.2.1). 6.0.0 only breaking change: separate transfer hosts off by default (FTP bounce protection). get-uri uses only `access`, `lastMod`, `list`, `downloadTo`, `close` - all unchanged. FTP is reached only if a proxy PAC URL is `ftp:`; our lhci run (staticDistDir, filesystem upload, no proxy) never loads it. Override safe. Remove it when get-uri ships a `^6` range.
+- lhci: maintained (0.16.0 2026-11-02, 0.16.1 2026-11-11, repo active, not archived). Keep. Config is sound: `staticDistDir`, `upload.target: filesystem` (no temporary-public-storage upload), no LHCI token/secrets. `--no-sandbox` acceptable on ephemeral CI runner against our own static dist only.
+- Alternative considered: `lighthouse` directly or Playwright + lighthouse drops lhci's server tree (express, body-parser, inquirer, proxy-agent) but needs our own static server, multi-run median and assertion code. Not worth it while lhci is maintained and clean.
+- Lesson: transitive FTP/proxy chains (proxy-agent -> get-uri -> basic-ftp) are a recurring advisory source; check `npm ls <pkg>` and the parent's semver range before an override, and record the removal condition.

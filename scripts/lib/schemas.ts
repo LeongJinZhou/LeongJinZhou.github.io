@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+// Plain file name only: no path, no "..".
+export const SHOT_FILE = /^(?!.*\.\.)[A-Za-z0-9._-]+\.(webp|png|jpg)$/
+
 export const REPO_NAME = /^(?!\.{1,2}$)[A-Za-z0-9._-]+$/
 
 // GitHub API response (unknown fields are stripped; wrong types fail the whole refresh).
@@ -31,7 +34,7 @@ export const OverrideSchema = z
     title: z.string().min(1).optional(),
     description: z.string().optional(),
     // Plain file name only: no path, no "..".
-    screenshot: z.string().regex(/^(?!.*\.\.)[A-Za-z0-9._-]+\.(webp|png|jpg)$/).optional(),
+    screenshot: z.string().regex(SHOT_FILE).optional(),
   })
   .strict()
 export type Override = z.infer<typeof OverrideSchema>
@@ -57,12 +60,26 @@ export const ProjectSchema = z.object({
   topics: z.array(z.string()),
   language: z.string().nullable(),
   languages: LanguagesSchema,
-  homepage: z.string().nullable(),
-  repoUrl: z.string(),
+  homepage: z.url({ protocol: /^https$/ }).nullable(),
+  repoUrl: z.url({ protocol: /^https$/ }),
   pushedAt: z.string(),
   stars: z.number(),
-  screenshot: z.string().nullable(),
+  screenshot: z.string().regex(SHOT_FILE).nullable(),
   featured: z.boolean(),
   readmeHtml: z.string(),
 })
 export type Project = z.infer<typeof ProjectSchema>
+
+// config/site.json: unknown fields rejected. `about` = intro paragraph, then bullets; a bullet written "Label: text" renders with a bold Label.
+// linkedinUrl "" means hidden (rule 17).
+export const SiteSchema = z
+  .object({
+    name: z.string().min(1),
+    title: z.string().min(1),
+    pitch: z.string().min(1),
+    about: z.array(z.string().min(1)).min(1),
+    linkedinUrl: z.union([z.literal(''), z.url({ protocol: /^https$/ })]),
+    skills: z.array(z.string().min(1)),
+  })
+  .strict()
+export type Site = z.infer<typeof SiteSchema>

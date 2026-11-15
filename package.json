@@ -16,7 +16,10 @@
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:e2e": "playwright test",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "prebuild": "node -e \"const f=require('fs'),s=process.env.DATA_DIR+'/shots';f.rmSync('public/shots',{recursive:true,force:true});process.env.DATA_DIR&&f.existsSync(s)&&f.cpSync(s,'public/shots',{recursive:true,force:true})\"",
+    "build:ci": "node -e \"process.env.DATA_DIR='tests/fixtures/generated';process.env.HIDDEN_FILE='tests/fixtures/hidden.txt';require('child_process').execSync('npm run build',{stdio:'inherit'})\"",
+    "lhci": "lhci autorun"
   },
   "dependencies": {
     "astro": "7.4.12",
@@ -29,6 +32,8 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
+    "@axe-core/playwright": "^4.14.0",
+    "@lhci/cli": "^0.16.1",
     "@playwright/test": "1.65.1",
     "@types/hast": "3.0.5",
     "@types/node": "^26.6.6",
@@ -40,6 +45,7 @@
     "vitest": "^5.1.0"
   },
   "overrides": {
-    "minimatch": "11.0.8"
+    "minimatch": "11.0.8",
+    "basic-ftp": "6.2.6"
   }
 }

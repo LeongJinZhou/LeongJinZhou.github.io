@@ -1,0 +1,39 @@
+---
+import Base from '../../layouts/Base.astro'
+import LangBar from '../../components/LangBar.astro'
+import ProjectShot from '../../components/ProjectShot.astro'
+import type { Project } from '../../../scripts/lib/schemas.ts'
+import { demoteHeadings, loadProjects, stackOf } from '../../lib/data.ts'
+
+export function getStaticPaths() {
+  return loadProjects().projects.map((project) => ({ params: { name: project.name }, props: { project } }))
+}
+
+type Props = { project: Project }
+const { project: p } = Astro.props
+const stack = stackOf(p)
+---
+
+<Base title={`${p.title} | Leong Jin Zhou`} description={p.description || `${p.title}, a project by Leong Jin Zhou.`}>
+  <article class="wrap detail">
+    <p><a href="/#projects">&larr; All projects</a></p>
+    <h1>{p.title}</h1>
+    <p class="lead">{p.description}</p>
+    <p class="cta">
+      <a class="btn btn-primary" href={p.repoUrl}>Repository on GitHub</a>
+      {p.homepage && <a class="btn" href={p.homepage}>Live site</a>}
+    </p>
+    <ProjectShot project={p} alt={`Screenshot of ${p.title}`} loading="eager" fetchpriority="high" />
+    <section aria-labelledby="stack-h">
+      <h2 id="stack-h">Stack</h2>
+      <div data-testid="stack">
+        <ul class="tags">{stack.map((t) => <li>{t}</li>)}</ul>
+        <LangBar languages={p.languages} />
+      </div>
+    </section>
+    <section aria-labelledby="readme-h">
+      <h2 id="readme-h">README</h2>
+      {p.readmeHtml ? <div class="readme" set:html={demoteHeadings(p.readmeHtml)} /> : <p class="empty">This project has no README yet.</p>}
+    </section>
+  </article>
+</Base>

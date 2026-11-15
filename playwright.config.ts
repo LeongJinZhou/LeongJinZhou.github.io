@@ -4,11 +4,12 @@ export default defineConfig({
   testDir: 'tests/e2e',
   forbidOnly: !!process.env.CI,
   retries: 0,
+  workers: process.env.CI ? 2 : 4,
   reporter: process.env.CI ? 'github' : 'list',
-  use: { baseURL: 'http://localhost:4321' },
+  use: { baseURL: 'http://127.0.0.1:4321' },
   webServer: {
-    command: 'npx astro preview --port 4321',
-    url: 'http://localhost:4321',
+    command: 'npx astro preview --host 127.0.0.1 --port 4321',
+    url: 'http://127.0.0.1:4321',
     reuseExistingServer: !process.env.CI,
   },
   projects: [

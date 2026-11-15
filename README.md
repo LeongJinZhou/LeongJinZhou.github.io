@@ -25,6 +25,7 @@ Spec-first and test-first, with an automated multi-agent workflow I
 designed for planning, building, review and CI.
 
 ## Getting started
+Build with `npm run build` (or `npm run build:ci` for fixture data); the prebuild step copies screenshots into `public/shots`, so `npx astro build` alone skips it.
 git clone ... && npm install && npm run dev
 
 ## Roadmap
