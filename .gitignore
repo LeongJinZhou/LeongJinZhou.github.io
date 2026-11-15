@@ -20,3 +20,6 @@ prompts/
 generated/
 public/shots/
 .astro/
+!tests/fixtures/generated/
+.lighthouseci/
+.playwright-mcp/

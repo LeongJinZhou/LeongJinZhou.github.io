@@ -1,0 +1,24 @@
+---
+import type { Project } from '../../scripts/lib/schemas.ts'
+
+interface Props {
+  project: Project
+  alt?: string
+  loading?: 'lazy' | 'eager'
+  fetchpriority?: 'high' | 'auto'
+}
+const { project: p, alt = '', loading = 'lazy', fetchpriority = 'auto' } = Astro.props
+// No screenshot: a generated card (rule 8), tint picked from the name so cards differ.
+const tint = [...p.name].reduce((n, c) => n + c.charCodeAt(0), 0) % 4
+---
+
+{
+  p.screenshot ? (
+    <img class="shot" src={`/shots/${p.screenshot}`} width="1280" height="800" alt={alt} loading={loading} fetchpriority={fetchpriority} decoding="async" />
+  ) : (
+    <div class={`shot shot-card tint-${tint}`} aria-hidden="true">
+      <span class="shot-lang">{p.language ?? 'code'}</span>
+      <span class="shot-name">{p.title}</span>
+    </div>
+  )
+}
