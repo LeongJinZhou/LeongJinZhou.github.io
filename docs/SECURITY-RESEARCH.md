@@ -6,6 +6,7 @@ Sources: npm registry, GitHub Advisory DB, action SHAs resolved via gh on 2026-1
 - astro 7.4.12 (must be >= 7.4.7: GHSA-26w7-cxv4-gfx2, GHSA-r3h5-4585-7x3w, GHSA-98hj-9722-w3j8).
 - Node 24 LTS (24.22.3+).
 - @playwright/test 1.65.1 (>= 1.55.1, GHSA-7mvr-c777-76hp). Keep current: bundled Chromium carries CVEs.
+- overrides.minimatch=11.0.8 for GHSA-g3hv-75wg-m249 (typescript-eslint 8.72.2 pulls 10.2.6); drop when typescript-estree accepts 11.
 - Commit lockfile, `npm ci`, `npm audit` + osv-scanner in CI.
 
 ## Actions pinned by SHA

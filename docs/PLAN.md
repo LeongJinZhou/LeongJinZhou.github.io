@@ -31,6 +31,7 @@ tests/         unit/ integration/ e2e/ fixtures/github/ fixtures/generated/
 - Accept: `check` green on PR; `npm audit --audit-level=moderate` clean.
 
 ### Slice 1 — Project data (refresh/generate)
+- First: add `scripts/tsconfig.json` extending root with `"module":"NodeNext","moduleResolution":"NodeNext"`, include `scripts/**` (+ any src/lib it imports); `typecheck` script gains `&& tsc -p scripts`. No `paths`. JSON imports use `with { type: 'json' }`.
 - Files: `scripts/lib/{schemas,github,select}.ts`, `scripts/refresh.ts`, config files (featured.txt = 8 from rule 4; health-ignore.txt with LinkedIn; overrides seeded from current profile README titles/descriptions), `tests/fixtures/github/*`.
 - Unit: excludes hidden, fork, archived, private, two self repos (S6, rules 1-2); new repo appears (S5); sort pushedAt desc (rule 5); featured order, hidden featured skipped (rule 4); override replaces title/description/screenshot only (rule 6); repo name `^[A-Za-z0-9._-]+$`; homepage kept only if https; pagination.
 - Integration: `refresh.ts` as child process vs `node:http` stub (`GITHUB_API_URL`), temp out dir, compare `projects.json` (S4). Stub 500 or 0 repos: output byte-identical, exit non-zero (S10, rule 13). Write to temp then rename after all fetches succeed.
