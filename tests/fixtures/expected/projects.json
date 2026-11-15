@@ -1,0 +1,80 @@
+[
+  {
+    "name": "qiu-cpdc-career-portal",
+    "title": "QIU CPDC Career Portal",
+    "description": "Multi-role career and industrial placement platform with AI learning and a gamified XP ledger",
+    "topics": [
+      "nextjs",
+      "prisma"
+    ],
+    "language": "TypeScript",
+    "languages": {
+      "TypeScript": 9000,
+      "CSS": 500
+    },
+    "homepage": "https://qiu-cpdc.example.com/",
+    "repoUrl": "https://github.com/LeongJinZhou/qiu-cpdc-career-portal",
+    "pushedAt": "2026-11-10T00:00:00Z",
+    "stars": 1,
+    "screenshot": null,
+    "featured": true,
+    "readmeHtml": ""
+  },
+  {
+    "name": "qiu-ai-video-2026",
+    "title": "qiu-ai-video-2026",
+    "description": "desc qiu-ai-video-2026",
+    "topics": [
+      "a"
+    ],
+    "language": "TypeScript",
+    "languages": {
+      "Python": 3000
+    },
+    "homepage": null,
+    "repoUrl": "https://github.com/LeongJinZhou/qiu-ai-video-2026",
+    "pushedAt": "2026-11-05T00:00:00Z",
+    "stars": 1,
+    "screenshot": null,
+    "featured": false,
+    "readmeHtml": ""
+  },
+  {
+    "name": "Pocket-G",
+    "title": "Pocket-G",
+    "description": "Secure mobile web client for a remote AI coding CLI over Tailscale",
+    "topics": [
+      "a"
+    ],
+    "language": "JavaScript",
+    "languages": {
+      "JavaScript": 2000
+    },
+    "homepage": null,
+    "repoUrl": "https://github.com/LeongJinZhou/Pocket-G",
+    "pushedAt": "2026-06-01T00:00:00Z",
+    "stars": 1,
+    "screenshot": null,
+    "featured": true,
+    "readmeHtml": ""
+  },
+  {
+    "name": "OCR1",
+    "title": "Medical Report OCR",
+    "description": "Digitises medical reports from photos and PDFs",
+    "topics": [
+      "a"
+    ],
+    "language": "Dart",
+    "languages": {
+      "Dart": 4000
+    },
+    "homepage": null,
+    "repoUrl": "https://github.com/LeongJinZhou/OCR1",
+    "pushedAt": "2026-03-01T00:00:00Z",
+    "stars": 1,
+    "screenshot": null,
+    "featured": true,
+    "readmeHtml": ""
+  }
+]

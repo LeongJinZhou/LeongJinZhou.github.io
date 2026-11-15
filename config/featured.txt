@@ -1,0 +1,8 @@
+qiu-cpdc-career-portal
+qiu-sld-campus-hub
+sld-event-verifier
+university-ims-erp
+Healthcare-Analysis-POC
+SmartRecipe-ContextAware-iOS
+Pocket-G
+OCR1
