@@ -42,7 +42,7 @@ export async function refresh(o: RefreshOpts): Promise<number> {
   const overrides = loadOverrides(join(o.configDir, 'overrides'))
   const gh = { baseUrl: o.baseUrl, token: o.token }
 
-  const repos = selectRepos(await fetchRepos(gh), hidden)
+  const repos = selectRepos(await fetchRepos(gh), hidden, featured)
   if (repos.length === 0) throw new Error('No projects fetched; keeping previous data')
   const languages: Record<string, Languages> = Object.create(null)
   const readmes: Record<string, string> = Object.create(null)
