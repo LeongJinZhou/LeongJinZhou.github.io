@@ -71,6 +71,9 @@ tests/         unit/ integration/ e2e/ fixtures/github/ fixtures/generated/
 - Snake: Platane/snk pinned SHA in its own `snake` job (contents: read), dark + light, output passed on as artifact (rule 12).
 - Profile push job: no third-party actions, no npm, no Playwright. PAT via env + `git -c http.extraheader="AUTHORIZATION: basic ..."`, never in the remote URL. Commits only when changed, message `chore: daily refresh` (rule 14).
 - Push skipped with `::warning::` when `PROFILE_REPO_TOKEN` empty; run stays green.
+- `commit` needs `[generate, screenshots]` only: a `snake` failure does not block data or the site deploy. `profile` needs `[generate, screenshots, snake]`; `verdict` needs every job and still fails the run.
+- `generate` writes `generated/MANIFEST.sha256` (sha256 of `projects.json` and `profile/**`) and exposes its hash as job output `manifest_sha`; `commit` and `profile` refuse any `generated` file that does not match it.
+- `refresh.ts` needs `GITHUB_TOKEN` (GraphQL stats) and exits non-zero without it.
 - Manual check: github.com/LeongJinZhou shows banner, cards, snake, shots after a real run (S7).
 
 ### Slice 7 — Health check (health.yml)

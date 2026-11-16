@@ -43,3 +43,5 @@ One-time setup (repo owner, in GitHub settings):
 2. Settings > Environments > github-pages > Deployment branches: `main` only.
 
 Bootstrap order: merge to `main`, then run the `refresh` workflow manually once (Actions > refresh > Run workflow). It creates the `data` branch and deploys. The first push-triggered deploy fails until that branch exists; this is expected.
+
+To run the refresh locally (`node scripts/refresh.ts <outDir>`), set `GITHUB_TOKEN` (a token with no extra scopes is enough): the profile stats use GitHub GraphQL, which needs one. Without it the script stops before writing anything.
