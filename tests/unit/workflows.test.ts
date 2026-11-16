@@ -81,7 +81,7 @@ describe('workflows', () => {
     expect(on).toHaveProperty('workflow_dispatch')
     expect(r).toHaveProperty('concurrency.group', 'refresh')
     expect(r).toHaveProperty('concurrency.cancel-in-progress', false)
-    expect(jobs('refresh.yml').map(([n]) => n).sort()).toEqual(['commit', 'deploy', 'generate', 'screenshots', 'verdict'])
+    expect(jobs('refresh.yml').map(([n]) => n).sort()).toEqual(['commit', 'deploy', 'generate', 'profile', 'screenshots', 'snake', 'verdict'])
   })
   it('refresh: commit job has no npm/node, copies allowlisted paths, rejects symlinks/hidden', () => {
     const c = Object.fromEntries(jobs('refresh.yml')).commit as Obj
@@ -109,7 +109,66 @@ describe('workflows', () => {
   it('refresh: verdict always runs and needs every job', () => {
     const v = Object.fromEntries(jobs('refresh.yml')).verdict as Obj
     expect(v.if).toBe('always()')
-    expect(v.needs).toEqual(['generate', 'screenshots', 'commit', 'deploy'])
+    expect(v.needs).toEqual(['generate', 'screenshots', 'snake', 'commit', 'profile', 'deploy'])
+  })
+  it('refresh: snake job is read-only, pinned to Platane/snk, makes dark and light, uploads artifact snake (rule 12)', () => {
+    const s = Object.fromEntries(jobs('refresh.yml')).snake as Obj
+    expect(s.permissions).toEqual({ contents: 'read' })
+    expect(s.needs).toBeUndefined()
+    const snk = stepsOf(s).find((x) => String(x.uses).startsWith('Platane/snk/'))
+    expect(snk?.uses).toBe('Platane/snk/svg-only@d8f6715049803e982ee5ff501b6b9b7d5deeb09b')
+    const outputs = String(obj(snk?.with, 'snk with').outputs)
+    expect(outputs).toMatch(/snake-dark\.svg\?palette=github-dark/)
+    expect(outputs).toMatch(/snake-light\.svg/)
+    const up = stepsOf(s).find((x) => String(x.uses).startsWith('actions/upload-artifact@'))
+    expect(up?.with).toMatchObject({ name: 'snake', 'if-no-files-found': 'error', 'include-hidden-files': false })
+    expect(JSON.stringify(s)).not.toContain('PROFILE_REPO_TOKEN')
+  })
+  it('refresh: generate publishes a manifest hash; commit and profile verify it through env', () => {
+    const j = Object.fromEntries(jobs('refresh.yml'))
+    expect((j.generate as Obj).outputs).toEqual({ manifest_sha: '${{ steps.manifest.outputs.manifest_sha }}' })
+    const gen = stepsOf(j.generate as Obj)
+    const mi = gen.findIndex((s) => s.id === 'manifest')
+    expect(mi).toBeGreaterThan(gen.findIndex((s) => String(s.run).startsWith('node scripts/refresh.ts')))
+    expect(mi).toBeLessThan(gen.findIndex((s) => String(s.uses).startsWith('actions/upload-artifact@')))
+    expect(String(gen[mi]?.run)).toContain('sha256sum')
+    for (const [n, name] of [['commit', 'Commit to data branch'], ['profile', 'Push to profile repo']] as const) {
+      const s = stepsOf(j[n] as Obj).find((x) => x.name === name)
+      expect(obj(s?.env, 'env').MANIFEST_SHA, n).toBe('${{ needs.generate.outputs.manifest_sha }}')
+      expect(String(s?.run), n).toContain('sha256sum -c')
+    }
+  })
+  it('refresh: git tokens go through GIT_CONFIG_* env, never `git -c http.extraheader` (argv shows in ps)', () => {
+    for (const n of ['commit', 'profile']) {
+      const runs = stepsOf(Object.fromEntries(jobs('refresh.yml'))[n] as Obj).map((s) => String(s.run ?? '')).join('\n')
+      expect(runs, n).not.toMatch(/-c\s+http\.extraheader/)
+      expect(runs, n).toContain('GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.extraheader GIT_CONFIG_VALUE_0="$AUTH"')
+    }
+  })
+  it('refresh: the profile PAT appears once, in the profile job only (SECURITY-RESEARCH "PAT")', () => {
+    expect(raw('refresh.yml').match(/secrets\.PROFILE_REPO_TOKEN/g)).toHaveLength(1)
+    for (const f of files) for (const [n, j] of jobs(f)) if (!(f === 'refresh.yml' && n === 'profile')) expect(JSON.stringify(j), `${f}:${n}`).not.toContain('PROFILE_REPO_TOKEN')
+    const p = Object.fromEntries(jobs('refresh.yml')).profile as Obj
+    const push = stepsOf(p).find((x) => x.name === 'Push to profile repo')
+    expect(obj(push?.env, 'env').PROFILE_REPO_TOKEN).toBe('${{ secrets.PROFILE_REPO_TOKEN }}')
+    expect(obj(push?.env, 'env').PROFILE_REPO_URL).toBe('https://github.com/LeongJinZhou/LeongJinZhou.git')
+  })
+  it('refresh: profile job runs only on main after generate, screenshots, snake; no npm, node, Playwright, checkout or third-party actions', () => {
+    const p = Object.fromEntries(jobs('refresh.yml')).profile as Obj
+    expect(p.needs).toEqual(['generate', 'screenshots', 'snake'])
+    expect(p.if).toBe("github.ref == 'refs/heads/main'")
+    expect(p.permissions).toEqual({ contents: 'read' })
+    const steps = stepsOf(p)
+    for (const s of steps.filter((x) => x.uses)) expect(String(s.uses)).toMatch(/^actions\/download-artifact@/)
+    const runs = steps.map((s) => String(s.run ?? '')).join('\n')
+    expect(runs).not.toMatch(/\b(npm|npx|node|playwright)\b/)
+    expect(steps.filter((x) => x.uses).map((d) => obj(d.with, 'with').name).sort()).toEqual(['final', 'generated', 'snake'])
+    expect(runs).toContain('http.extraheader')
+    expect(runs).toContain('::add-mask::')
+    expect(runs).toContain('::warning::')
+    expect(runs).not.toMatch(/x-access-token:[^%]*@|https:\/\/[^ "]*:\$/) // token never in a URL
+    expect(runs).toContain('git status --porcelain')
+    expect(runs).toContain('chore: daily refresh')
   })
   it('refresh: screenshots job is read-only, secret-free, and feeds commit via artifact final', () => {
     const j = Object.fromEntries(jobs('refresh.yml'))

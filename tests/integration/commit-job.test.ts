@@ -1,12 +1,15 @@
 // Runs the real refresh.yml "Commit to data branch" script against a local bare repo.
 import { execFileSync, spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { parse } from 'yaml'
 import { runShots } from '../../scripts/screenshots.ts'
+import { writeManifest } from '../helpers/manifest.ts'
+
+vi.setConfig({ testTimeout: 30_000 }) // each case spawns bash + several git processes; the 5 s default flakes on Windows under parallel load
 
 type Step = { name?: string; run?: string; env?: Record<string, string> }
 const wf = parse(readFileSync(fileURLToPath(new URL('../../.github/workflows/refresh.yml', import.meta.url)), 'utf8'))
@@ -41,13 +44,31 @@ function artifact(extra: (dir: string) => void = () => {}) {
   return dir
 }
 
-// `final` defaults to the same dir: projects.json and shots/ in one place. Pass another dir to test the split.
-function runJob(generated: string, final = generated) {
+interface JobOpts {
+  /** Runs after the manifest is written: simulates a swapped or edited artifact. */
+  tamper?: (generated: string) => void
+  /** Overrides the manifest hash the job graph would pass in. */
+  sha?: string
+  /** Use the MANIFEST.sha256 already in the dir (written by the real generate step). */
+  keep?: boolean
+}
+
+// Without `final`, shots/ is moved out of the artifact dir (the real generated artifact holds only projects.json and the manifest).
+// The manifest is written after the dir is built, like the generate job does.
+function runJob(generated: string, final?: string, o: JobOpts = {}) {
+  let fin = final
+  if (!fin) {
+    fin = `${generated}-final`
+    mkdirSync(fin)
+    if (existsSync(join(generated, 'shots'))) renameSync(join(generated, 'shots'), join(fin, 'shots'))
+  }
+  const sha = o.keep ? '' : writeManifest(generated)
+  o.tamper?.(generated)
   const cwd = mkdtempSync(join(tmp, 'runner-'))
   const r = spawnSync(bash, ['-c', script], {
     cwd,
     encoding: 'utf8',
-    env: { ...gitEnv, GH_TOKEN: TOKEN, REPO_URL: `file://${slash(remote).startsWith('/') ? '' : '/'}${slash(remote)}`, GENERATED: slash(generated), FINAL: slash(final) },
+    env: { ...gitEnv, GH_TOKEN: TOKEN, REPO_URL: `file://${slash(remote).startsWith('/') ? '' : '/'}${slash(remote)}`, GENERATED: slash(generated), FINAL: slash(fin), MANIFEST_SHA: o.sha ?? sha },
   })
   return { ...r, work: join(cwd, 'work') }
 }
@@ -58,7 +79,8 @@ const tree = () => git(remote, 'ls-tree', '-r', '--name-only', 'data').split('\n
 describe('refresh.yml commit job script', () => {
   it('is present in the workflow with the env it relies on', () => {
     expect(script).toContain('set -euo pipefail')
-    expect(Object.keys(step?.env ?? {}).sort()).toEqual(['FINAL', 'GENERATED', 'GH_TOKEN', 'REPO_URL'])
+    expect(Object.keys(step?.env ?? {}).sort()).toEqual(['FINAL', 'GENERATED', 'GH_TOKEN', 'MANIFEST_SHA', 'REPO_URL'])
+    expect(step?.env?.MANIFEST_SHA).toBe('${{ needs.generate.outputs.manifest_sha }}')
   })
 })
 
@@ -75,13 +97,12 @@ describe.skipIf(!hasBash)('refresh.yml commit job against a local bare remote', 
   afterAll(() => rmSync(tmp, { recursive: true, force: true }))
 
   it('first run creates orphan data branch with one "chore: daily refresh" commit', () => {
-    const r = runJob(artifact((d) => writeFileSync(join(d, 'extra.txt'), 'not allowlisted')))
+    const r = runJob(artifact())
     expect(r.status, r.stderr).toBe(0)
     expect(commits()).toBe('1')
     expect(git(remote, 'log', '-1', '--format=%s|%an|%P', 'data')).toBe('chore: daily refresh|github-actions[bot]|')
     expect(git(remote, 'show', 'data:projects.json') + '\n').toBe(PROJECTS)
     expect(execFileSync('git', ['-C', remote, 'cat-file', 'blob', 'data:shots/a.png'], { env: gitEnv }).equals(SHOT)).toBe(true)
-    // Non-allowlisted artifact file is not copied.
     expect(tree()).toEqual(['projects.json', 'shots/a.png'])
     // Token never lands in the repo config or remote URL.
     expect(readFileSync(join(r.work, '.git', 'config'), 'utf8')).not.toContain(TOKEN)
@@ -197,6 +218,50 @@ describe.skipIf(!hasBash)('refresh.yml commit job against a local bare remote', 
     expect(JSON.parse(git(remote, 'show', 'data:projects.json'))[0].screenshot).toBe('plain.webp')
     expect(execFileSync('git', ['-C', remote, 'cat-file', 'blob', 'data:shots/plain.webp'], { env: gitEnv }).subarray(8, 12).toString('latin1')).toBe('WEBP')
   }, 60_000)
+
+  // Artifact poisoning: `generated` must be exactly what the generate job wrote (manifest hash comes through the job graph).
+  it.each<[string, (d: string) => void]>([
+    ['a tampered projects.json', (d) => writeFileSync(join(d, 'projects.json'), '{"projects":["TAMPERED"]}\n')],
+    ['an extra file', (d) => writeFileSync(join(d, 'extra.txt'), 'x')],
+    ['an extra file named like the manifest in a subfolder', (d) => {
+      mkdirSync(join(d, 'sub'))
+      writeFileSync(join(d, 'sub', 'MANIFEST.sha256'), 'x')
+    }],
+    ['a tampered manifest', (d) => appendFileSync(join(d, 'MANIFEST.sha256'), '\n')],
+    ['a missing manifest', (d) => rmSync(join(d, 'MANIFEST.sha256'))],
+  ])('rejects %s and pushes nothing', (_name, tamper) => {
+    const before = git(remote, 'rev-parse', 'data')
+    const r = runJob(artifact(), undefined, { tamper })
+    expect(r.status).not.toBe(0)
+    expect(r.stdout).toContain('::error::Generated artifact')
+    expect(git(remote, 'rev-parse', 'data')).toBe(before)
+  })
+  it.each(['', 'a'.repeat(64)])('rejects a manifest hash from the job graph that does not match (%j)', (sha) => {
+    const before = git(remote, 'rev-parse', 'data')
+    const r = runJob(artifact(), undefined, { sha })
+    expect(r.status).not.toBe(0)
+    expect(r.stdout).toContain('::error::Generated artifact')
+    expect(git(remote, 'rev-parse', 'data')).toBe(before)
+  })
+  it('accepts what the real generate-step manifest script wrote', () => {
+    const gen = artifact()
+    mkdirSync(join(gen, 'profile', 'assets'), { recursive: true })
+    writeFileSync(join(gen, 'profile', 'README.md'), '# r\n')
+    writeFileSync(join(gen, 'profile', 'assets', 'banner.svg'), '<svg/>')
+    const fin = `${gen}-final`
+    mkdirSync(fin)
+    renameSync(join(gen, 'shots'), join(fin, 'shots'))
+    const gs = (wf.jobs.generate.steps as (Step & { id?: string })[]).find((s) => s.id === 'manifest')
+    const out = join(tmp, `gh-output-${n++}`)
+    writeFileSync(out, '')
+    const m = spawnSync(bash, ['-c', gs?.run ?? 'exit 99'], { cwd: gen, encoding: 'utf8', env: { ...gitEnv, GITHUB_OUTPUT: slash(out) } })
+    expect(m.status, m.stderr).toBe(0)
+    const sha = /manifest_sha=([0-9a-f]{64})/.exec(readFileSync(out, 'utf8'))?.[1]
+    expect(sha).toBeDefined()
+    expect(readFileSync(join(gen, 'MANIFEST.sha256'), 'utf8').trim().split('\n').map((l) => l.slice(66))).toEqual(['profile/README.md', 'profile/assets/banner.svg', 'projects.json']) // byte order
+    const r = runJob(gen, fin, { keep: true, sha: sha as string })
+    expect(r.status, r.stdout + r.stderr).toBe(0)
+  })
 
   let canLink = true
   try {
