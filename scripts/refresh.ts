@@ -1,11 +1,14 @@
 import { readdirSync, readFileSync, renameSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { z } from 'zod'
-import { fetchLanguages, fetchReadme, fetchRepos, OWNER } from './lib/github.ts'
+import { fetchContributions, fetchLanguages, fetchReadme, fetchRepos, OWNER } from './lib/github.ts'
+import { buildProfile } from './lib/profile.ts'
 import { renderReadme } from './lib/readme.ts'
 import { shotName } from './lib/shots.ts'
 import { buildProjects, selectRepos } from './lib/select.ts'
-import { OverrideSchema, ProjectSchema, REPO_NAME, type Languages, type Override } from './lib/schemas.ts'
+import { OverrideSchema, ProjectSchema, REPO_NAME, SiteSchema, type Languages, type Override } from './lib/schemas.ts'
+
+const DEFAULT_TEMPLATE = join(import.meta.dirname, '..', 'profile', 'README.template.md')
 
 export function readList(file: string): string[] {
   return readFileSync(file, 'utf8')
@@ -33,9 +36,11 @@ export interface RefreshOpts {
   configDir: string
   baseUrl?: string | undefined
   token?: string | undefined
+  /** Profile README template; defaults to profile/README.template.md in this repo. */
+  templateFile?: string | undefined
 }
 
-/** Fetch everything first; write only when all succeeded and at least one project exists (rule 13). */
+/** Fetch everything first; write only when all succeeded and at least one project exists (rule 13). Also writes <outDir>/profile/. */
 export async function refresh(o: RefreshOpts): Promise<number> {
   const hidden = new Set(readList(join(o.configDir, 'hidden.txt')))
   const featured = readList(join(o.configDir, 'featured.txt'))
@@ -60,13 +65,27 @@ export async function refresh(o: RefreshOpts): Promise<number> {
   const built = buildProjects(repos, languages, { featured, overrides })// Every project without an override image points at shots/<name>.webp; the screenshots job only writes those files.
     .map((p) => ({ ...p, screenshot: p.screenshot ?? `${shotName(p.name)}.webp`, readmeHtml: readmes[p.name] ?? '' }))
   const projects = z.array(ProjectSchema).parse(built)
+  // Everything that can fail is done before the first write.
+  const site = SiteSchema.parse(JSON.parse(readFileSync(join(o.configDir, 'site.json'), 'utf8')))
+  const profile = buildProfile(readFileSync(o.templateFile ?? DEFAULT_TEMPLATE, 'utf8'), site, projects, featured, await fetchContributions(gh))
   mkdirSync(o.outDir, { recursive: true })
+  // Both outputs go to temp names first; a failure removes them, so no partial profile/ is left.
   const tmp = join(o.outDir, 'projects.json.tmp')
+  const profileTmp = join(o.outDir, 'profile.tmp')
   try {
+    rmSync(profileTmp, { recursive: true, force: true })
+    for (const [file, text] of Object.entries(profile)) {
+      const dest = join(profileTmp, file)
+      mkdirSync(dirname(dest), { recursive: true })
+      writeFileSync(dest, text)
+    }
     writeFileSync(tmp, JSON.stringify(projects, null, 2) + '\n')
     renameSync(tmp, join(o.outDir, 'projects.json'))
+    rmSync(join(o.outDir, 'profile'), { recursive: true, force: true })
+    renameSync(profileTmp, join(o.outDir, 'profile'))
   } catch (e) {
     rmSync(tmp, { force: true })
+    rmSync(profileTmp, { recursive: true, force: true })
     throw e
   }
   return projects.length
@@ -77,6 +96,11 @@ if (import.meta.main) {
   if (!outDir) {
     console.error('Usage: node scripts/refresh.ts <outDir> (or OUT_DIR)')
     process.exit(2)
+  }
+  if (!process.env.GITHUB_TOKEN) {
+    // The profile stats use GraphQL, which GitHub only serves with a token.
+    console.error('refresh failed: GITHUB_TOKEN is required (GraphQL stats)')
+    process.exit(1)
   }
   try {
     const n = await refresh({

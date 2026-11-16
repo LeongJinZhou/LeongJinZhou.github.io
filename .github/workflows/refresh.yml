@@ -17,6 +17,8 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
+    outputs:
+      manifest_sha: ${{ steps.manifest.outputs.manifest_sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -29,6 +31,13 @@ jobs:
       - run: node scripts/refresh.ts generated
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Fingerprint of everything the commit and profile jobs will trust. The hash travels as a job output, which no later job can alter.
+      - id: manifest
+        working-directory: generated
+        run: |
+          set -euo pipefail
+          find projects.json profile -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > MANIFEST.sha256
+          echo "manifest_sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: generated
@@ -77,6 +86,26 @@ jobs:
           if-no-files-found: error
           include-hidden-files: false
 
+  # Third-party action in its own read-only job, no secrets, no other job's data (rule 12). Output goes on as an artifact.
+  snake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: Platane/snk/svg-only@d8f6715049803e982ee5ff501b6b9b7d5deeb09b # v3.5.0
+        with:
+          github_user_name: LeongJinZhou
+          outputs: |
+            dist/snake-light.svg
+            dist/snake-dark.svg?palette=github-dark
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: snake
+          path: dist
+          if-no-files-found: error
+          include-hidden-files: false
+
   commit:
     needs: [generate, screenshots]
     if: github.ref == 'refs/heads/main'
@@ -100,16 +129,33 @@ jobs:
           REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
           GENERATED: ${{ runner.temp }}/generated
           FINAL: ${{ runner.temp }}/final
+          MANIFEST_SHA: ${{ needs.generate.outputs.manifest_sha }}
         run: |
           set -euo pipefail
-          # Token stays in this process env only, never in .git/config or the remote URL.
+          # Token stays in the env of git network commands only: not in argv, .git/config or the remote URL.
           AUTH="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
           echo "::add-mask::${AUTH#AUTHORIZATION: basic }"
+          gitnet() { GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.extraheader GIT_CONFIG_VALUE_0="$AUTH" git "$@"; }
+          # `generated` must be exactly what the generate job wrote: its manifest hash arrives through the job graph.
+          verify_generated() {
+            cd "$GENERATED"
+            if [ ! -f MANIFEST.sha256 ] || [ "$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" != "$MANIFEST_SHA" ] || ! sha256sum -c --quiet MANIFEST.sha256 >/dev/null 2>&1; then
+              echo "::error::Generated artifact does not match the generate job manifest."
+              exit 1
+            fi
+            while IFS= read -r -d '' f; do
+              h="$(sha256sum "$f" | cut -d' ' -f1)" # sha256sum marks binary mode with " *" on some platforms
+              if ! grep -qxF -e "$h  ${f#./}" -e "$h *${f#./}" MANIFEST.sha256; then
+                echo "::error::Generated artifact has a file the manifest does not list: ${f#./}"
+                exit 1
+              fi
+            done < <(find . -type f ! -path ./MANIFEST.sha256 -print0)
+          }
           git init -q work
           cd work
           git remote add origin "$REPO_URL"
-          if git -c http.extraheader="$AUTH" ls-remote --exit-code --heads origin data >/dev/null; then
-            git -c http.extraheader="$AUTH" fetch -q --depth=1 origin data
+          if gitnet ls-remote --exit-code --heads origin data >/dev/null; then
+            gitnet fetch -q --depth=1 origin data
             git checkout -q -b data FETCH_HEAD
           else
             git checkout -q --orphan data
@@ -120,6 +166,7 @@ jobs:
             echo "::error::Artifact contains a symlink or hidden file."
             exit 1
           fi
+          (verify_generated)
           if [ -d "$FINAL/shots" ]; then
             if [ -n "$(find "$FINAL/shots" ! -path "$FINAL/shots" ! \( -type f \( -name '*.webp' -o -name '*.png' \) \) -print -quit)" ]; then
               echo "::error::shots/ may only contain .webp and .png files."
@@ -147,7 +194,143 @@ jobs:
             exit 0
           fi
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "chore: daily refresh"
-          git -c http.extraheader="$AUTH" push -q origin data
+          gitnet push -q origin data
+
+  # The only job that holds the profile PAT (SECURITY-RESEARCH "PAT"): no checkout, no npm, no browser, no third-party action.
+  # README and SVGs come from the trusted generate job; shots from the screenshots job; snake from the snake job. All are re-checked here.
+  profile:
+    needs: [generate, screenshots, snake]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: generated
+          path: ${{ runner.temp }}/generated
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: final
+          path: ${{ runner.temp }}/final
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: snake
+          path: ${{ runner.temp }}/snake
+      - name: Push to profile repo
+        env:
+          PROFILE_REPO_TOKEN: ${{ secrets.PROFILE_REPO_TOKEN }}
+          PROFILE_REPO_URL: https://github.com/LeongJinZhou/LeongJinZhou.git
+          GENERATED: ${{ runner.temp }}/generated
+          FINAL: ${{ runner.temp }}/final
+          SNAKE: ${{ runner.temp }}/snake
+          MANIFEST_SHA: ${{ needs.generate.outputs.manifest_sha }}
+        run: |
+          set -euo pipefail
+          if [ -z "$PROFILE_REPO_TOKEN" ]; then
+            echo "::warning::PROFILE_REPO_TOKEN is not set; the profile README was not pushed."
+            exit 0
+          fi
+          # `generated` must be exactly what the generate job wrote: its manifest hash arrives through the job graph.
+          verify_generated() {
+            cd "$GENERATED"
+            if [ ! -f MANIFEST.sha256 ] || [ "$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" != "$MANIFEST_SHA" ] || ! sha256sum -c --quiet MANIFEST.sha256 >/dev/null 2>&1; then
+              echo "::error::Generated artifact does not match the generate job manifest."
+              exit 1
+            fi
+            while IFS= read -r -d '' f; do
+              h="$(sha256sum "$f" | cut -d' ' -f1)" # sha256sum marks binary mode with " *" on some platforms
+              if ! grep -qxF -e "$h  ${f#./}" -e "$h *${f#./}" MANIFEST.sha256; then
+                echo "::error::Generated artifact has a file the manifest does not list: ${f#./}"
+                exit 1
+              fi
+            done < <(find . -type f ! -path ./MANIFEST.sha256 -print0)
+          }
+          gitnet() { GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.extraheader GIT_CONFIG_VALUE_0="$AUTH" git "$@"; }
+          P="$GENERATED/profile"
+          # -print -quit: no pipe, so pipefail cannot turn a SIGPIPE into a pass.
+          for d in "$P" "$FINAL/shots" "$SNAKE"; do
+            [ -d "$d" ] || continue
+            if [ -n "$(find "$d" \( -type l -o -name '.*' \) ! -path "$d" -print -quit)" ]; then
+              echo "::error::Artifact contains a symlink or hidden file."
+              exit 1
+            fi
+          done
+          # Every file is checked by content and size, never by name alone.
+          check_svg() {
+            if [ ! -f "$1" ]; then echo "::error::${1##*/} is missing."; exit 1; fi
+            if [ "$(wc -c < "$1")" -gt 2097152 ]; then echo "::error::${1##*/} is over 2 MB."; exit 1; fi
+            case "$(head -c 4096 "$1" | tr -d '\0')" in
+              *'<svg'*) ;;
+              *) echo "::error::${1##*/} is not an SVG."; exit 1 ;;
+            esac
+            # Allowlist: no links, imports, entities or declarations, and only drawing elements (snk v3.5.0 output uses svg, desc, style, rect).
+            if grep -aqiE 'href|url\(|@import|&#|<!|<script|javascript:|[[:space:]]on[a-z]+=' "$1"; then
+              echo "::error::${1##*/} contains active content."
+              exit 1
+            fi
+            for e in $(grep -aoE '</?[A-Za-z][A-Za-z0-9:.-]*' "$1" | tr -d '</' | tr 'A-Z' 'a-z' | sort -u); do
+              case "$e" in
+                svg | g | rect | path | circle | line | polyline | polygon | text | tspan | style | title | desc | defs | lineargradient | radialgradient | stop | animate | clippath | mask) ;;
+                *) echo "::error::${1##*/} contains active content (element $e)."; exit 1 ;;
+              esac
+            done
+          }
+          (verify_generated)
+          if [ ! -f "$P/README.md" ]; then echo "::error::README.md is missing."; exit 1; fi
+          if [ "$(wc -c < "$P/README.md")" -gt 2097152 ]; then echo "::error::README.md is over 2 MB."; exit 1; fi
+          for f in banner stats-dark stats-light langs-dark langs-light; do check_svg "$P/assets/$f.svg"; done
+          for f in snake-dark snake-light; do check_svg "$SNAKE/$f.svg"; done
+          if [ -d "$FINAL/shots" ]; then
+            if [ -n "$(find "$FINAL/shots" ! -path "$FINAL/shots" ! \( -type f \( -name '*.webp' -o -name '*.png' \) \) -print -quit)" ]; then
+              echo "::error::shots/ may only contain .webp and .png files."
+              exit 1
+            fi
+            for f in "$FINAL"/shots/*; do
+              [ -e "$f" ] || continue
+              if [ "$(wc -c < "$f")" -gt 2097152 ]; then
+                echo "::error::${f##*/} is over 2 MB."
+                exit 1
+              fi
+              sig="$(head -c 12 "$f" | od -An -tx1 | tr -d ' \n')"
+              case "$sig" in
+                52494646????????57454250 | 89504e470d0a1a0a*) ;;
+                *) echo "::error::${f##*/} is not a valid WebP or PNG image."; exit 1 ;;
+              esac
+            done
+          fi
+          # Token stays in this process env only, never in .git/config or the remote URL.
+          AUTH="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$PROFILE_REPO_TOKEN" | base64 -w0)"
+          echo "::add-mask::${AUTH#AUTHORIZATION: basic }"
+          git init -q work
+          cd work
+          git remote add origin "$PROFILE_REPO_URL"
+          rc=0
+          gitnet ls-remote --exit-code --heads origin main >/dev/null || rc=$?
+          if [ "$rc" = 0 ]; then
+            gitnet fetch -q --depth=1 origin main
+            git checkout -q -b main FETCH_HEAD
+          elif [ "$rc" = 2 ]; then
+            git checkout -q --orphan main
+          else
+            echo "::error::Could not read the profile repo."
+            exit 1
+          fi
+          # Only the generated paths are replaced; other files in the profile repo stay.
+          rm -rf README.md assets
+          mkdir -p assets/shots
+          cp "$P/README.md" README.md
+          for f in banner stats-dark stats-light langs-dark langs-light; do cp "$P/assets/$f.svg" assets/; done
+          for f in snake-dark snake-light; do cp "$SNAKE/$f.svg" assets/; done
+          if [ -d "$FINAL/shots" ]; then cp -R "$FINAL/shots/." assets/shots/; fi
+          git add -A
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No changes; nothing to commit."
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "chore: daily refresh"
+          gitnet push -q origin main
 
   deploy:
     needs: commit
@@ -159,7 +342,7 @@ jobs:
 
   verdict:
     if: always()
-    needs: [generate, screenshots, commit, deploy]
+    needs: [generate, screenshots, snake, commit, profile, deploy]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import { LanguagesSchema, ReadmeSchema, ReposSchema, type Languages, type Repo } from './schemas.ts'
 
 export const OWNER = 'LeongJinZhou'
@@ -22,10 +23,10 @@ class HttpError extends Error {
   }
 }
 
-async function get(url: string, o: GithubOpts): Promise<Response> {
+async function get(url: string, o: GithubOpts, body?: string): Promise<Response> {
   const headers: Record<string, string> = { Accept: 'application/vnd.github+json', 'User-Agent': 'portfolio-refresh' }
   if (o.token) headers.Authorization = `Bearer ${o.token}`
-  const res = await fetch(url, { headers, // shortcut: hard-coded 30 s default; move to settings if it ever needs tuning.
+  const res = await fetch(url, { headers, ...(body === undefined ? {} : { method: 'POST', body }), // shortcut: hard-coded 30 s default; move to settings if it ever needs tuning.
     signal: AbortSignal.timeout(o.timeoutMs ?? 30000) })
   // Status only: never echo headers or URL query (token safety).
   if (!res.ok) throw new HttpError(res.status)
@@ -60,6 +61,30 @@ export async function fetchLanguages(name: string, o: GithubOpts = {}): Promise<
   assertSafeTransport(base, o)
   const res = await get(new URL(`/repos/${OWNER}/${encodeURIComponent(name)}/languages`, base).href, o)
   return LanguagesSchema.parse(await res.json())
+}
+
+// Always user(login:), never viewer: with GITHUB_TOKEN the viewer is the Actions bot, not the owner.
+const CONTRIBUTIONS_QUERY = `query{user(login:"${OWNER}"){contributionsCollection{totalCommitContributions}pullRequests{totalCount}}}`
+
+const ContributionsSchema = z.object({
+  data: z.object({
+    user: z.object({
+      contributionsCollection: z.object({ totalCommitContributions: z.number().int().nonnegative() }),
+      pullRequests: z.object({ totalCount: z.number().int().nonnegative() }),
+    }),
+  }),
+  errors: z.never().optional(), // any "errors" entry fails the parse
+})
+
+/** Rule 11: commits in the last year and PR count (public only, Q8). Any GraphQL error throws (rule 13). */
+export async function fetchContributions(o: GithubOpts = {}): Promise<{ commits: number; prs: number }> {
+  const base = new URL(o.baseUrl ?? 'https://api.github.com')
+  assertSafeTransport(base, o)
+  const res = await get(new URL('/graphql', base).href, o, JSON.stringify({ query: CONTRIBUTIONS_QUERY }))
+  const parsed = ContributionsSchema.safeParse(await res.json())
+  if (!parsed.success) throw new Error('GitHub GraphQL error: errors or unexpected response') // no body: nothing sensitive in logs
+  const u = parsed.data.data.user
+  return { commits: u.contributionsCollection.totalCommitContributions, prs: u.pullRequests.totalCount }
 }
 
 export interface Readme {
