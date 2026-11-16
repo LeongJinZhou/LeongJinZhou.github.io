@@ -138,6 +138,16 @@ describe('workflows', () => {
     expect(sysctl).toBeGreaterThan(-1)
     expect(sysctl).toBeLessThan(run)
   })
+  it('ci: installs Chromium and lifts the AppArmor userns restriction before unit/integration tests', () => {
+    const steps = jobs('ci.yml').flatMap(([, j]) => stepsOf(j))
+    const at = (run: string) => steps.findIndex((x) => x.run === run)
+    const tests = at('npm run test:coverage')
+    expect(tests).toBeGreaterThan(-1)
+    expect(at('sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0')).toBeGreaterThan(-1)
+    expect(at('sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0')).toBeLessThan(tests)
+    expect(at('npx playwright install --with-deps chromium')).toBeGreaterThan(-1)
+    expect(at('npx playwright install --with-deps chromium')).toBeLessThan(tests)
+  })
   it('refresh: verdict fails on screenshots failed=true, read through env', () => {
     const v = Object.fromEntries(jobs('refresh.yml')).verdict as Obj
     const st = stepsOf(v)[0] as Obj
