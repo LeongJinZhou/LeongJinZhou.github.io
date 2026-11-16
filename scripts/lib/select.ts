@@ -68,6 +68,18 @@ export function buildProjects(
   })
 }
 
+/** shields.io static badge (rule 7a): "-" and "_" doubled, spaces to "_", then URL-encoded. Shared by the site and the profile README. */
+export function badgeUrl(skill: string): string {
+  const label = skill.replaceAll('-', '--').replaceAll('_', '__').replaceAll(' ', '_')
+  return `https://img.shields.io/badge/${encodeURIComponent(label)}-1f2937?style=flat-square`
+}
+
+/** Language first, then topics; repeats (any case) dropped. */
+export function stackOf(p: Pick<Project, 'language' | 'topics'>): string[] {
+  const seen = new Set<string>()
+  return [p.language, ...p.topics].filter((t): t is string => !!t && !seen.has(t.toLowerCase()) && !!seen.add(t.toLowerCase()))
+}
+
 /** Rule 4: featured projects in featured.txt order; absent (hidden/private) ones are skipped. */
 export function featuredProjects(projects: readonly Project[], featured: readonly string[]): Project[] {
   return featured.flatMap((n) => projects.filter((p) => p.name.toLowerCase() === n.toLowerCase()))

@@ -4,7 +4,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
-import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+vi.setConfig({ testTimeout: 30_000 }) // cases spawn node refresh.ts (exec timeout 10 s); the 5 s default flakes on Windows under parallel load
 import { startStub, type Mode, type Stub } from '../helpers/stub.ts'
 
 // Acceptance tests: real CLI entry point -> config files -> GitHub client -> select -> projects.json.
@@ -20,7 +22,7 @@ let stub: Stub
 async function run(env: Record<string, string> = {}) {
   try {
     await exec(process.execPath, [script, out], {
-      env: { ...process.env, CONFIG_DIR: cfg, GITHUB_API_URL: stub.url, GITHUB_TOKEN: '', ...env },
+      env: { ...process.env, CONFIG_DIR: cfg, GITHUB_API_URL: stub.url, GITHUB_TOKEN: 'tok-default', ...env },
       encoding: 'utf8',
       timeout: 10_000,
       killSignal: 'SIGKILL',
@@ -91,7 +93,7 @@ describe('S10 / rule 13: failures keep the last good data and exit non-zero', ()
     stub.mode = 'malformed'
     expect(await run()).toBe(1)
     expect(readFileSync(join(out, 'projects.json')).equals(before)).toBe(true)
-    expect(readdirSync(out)).toEqual(['projects.json'])
+    expect(readdirSync(out)).toEqual(['profile', 'projects.json'])
   })
   it('every repo hidden (0 projects after filtering): file unchanged, exit 1', async () => {
     await start()

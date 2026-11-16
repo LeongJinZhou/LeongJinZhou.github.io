@@ -2,7 +2,9 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { z } from 'zod'
 import { ProjectSchema, SiteSchema, type Languages, type Project, type Site } from '../../scripts/lib/schemas.ts'
-import { featuredProjects } from '../../scripts/lib/select.ts'
+import { featuredProjects, stackOf } from '../../scripts/lib/select.ts'
+
+export { badgeUrl, stackOf } from '../../scripts/lib/select.ts'
 
 const ROOT = process.cwd()
 
@@ -55,12 +57,6 @@ export function loadSite(root = ROOT): Site {
   return SiteSchema.parse(parseJson(readFileSync(file, 'utf8'), file))
 }
 
-/** Language first, then topics; repeats (any case) dropped. */
-export function stackOf(p: Pick<Project, 'language' | 'topics'>): string[] {
-  const seen = new Set<string>()
-  return [p.language, ...p.topics].filter((t): t is string => !!t && !seen.has(t.toLowerCase()) && !!seen.add(t.toLowerCase()))
-}
-
 /** Filter list: every project language and topic, deduped case-insensitively, sorted. */
 export function techList(projects: readonly Project[]): string[] {
   const seen = new Map<string, string>()
@@ -77,12 +73,6 @@ export function languageShares(languages: Languages): { name: string; pct: numbe
   const rest = entries.slice(5).reduce((n, [, b]) => n + b, 0)
   if (rest > 0) head.push(['Other', rest])
   return head.map(([name, b]) => ({ name, pct: (b / total) * 100 }))
-}
-
-/** shields.io static badge (rule 7a): "-" and "_" doubled, spaces to "_", then URL-encoded. */
-export function badgeUrl(skill: string): string {
-  const label = skill.replaceAll('-', '--').replaceAll('_', '__').replaceAll(' ', '_')
-  return `https://img.shields.io/badge/${encodeURIComponent(label)}-1f2937?style=flat-square`
 }
 
 /** Page has one h1 and a "README" h2 above: README h1..h6 become h3..h6 (sanitised HTML has bare tags only). */

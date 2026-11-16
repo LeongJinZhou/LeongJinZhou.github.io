@@ -4,18 +4,22 @@ import type { AddressInfo } from 'node:net'
 
 const fx = (f: string) => readFileSync(new URL(`../fixtures/github/${f}`, import.meta.url), 'utf8')
 
-export type Mode = 'ok' | 'error500' | 'empty' | 'languages500' | 'foreign-next' | 'malformed' | 'new-repo' | 'readme500' | 'bad-branch'
+export type Mode =
+  | 'ok' | 'error500' | 'empty' | 'languages500' | 'foreign-next' | 'malformed' | 'new-repo' | 'readme500' | 'bad-branch'
+  | 'graphql-errors' | 'graphql-null-user' | 'graphql-partial-errors'
 
 export interface Stub {
   url: string
   seenAuth: (string | undefined)[]
+  /** Bodies of every POST /graphql request. */
+  graphql: string[]
   mode: Mode
   close: () => Promise<void>
 }
 
 export async function startStub(mode: Mode = 'ok'): Promise<Stub> {
   const seenAuth: (string | undefined)[] = []
-  const stub = { seenAuth, mode } as Stub
+  const stub = { seenAuth, mode, graphql: [] as string[] } as Stub
   const server: Server = createServer((req, res) => {
     seenAuth.push(req.headers.authorization)
     const u = new URL(req.url ?? '/', 'http://x')
@@ -24,6 +28,19 @@ export async function startStub(mode: Mode = 'ok'): Promise<Stub> {
       res.end(body)
     }
     if (stub.mode === 'error500') return send(500, '{"message":"boom"}')
+    if (u.pathname === '/graphql' && req.method === 'POST') {
+      let body = ''
+      req.on('data', (c: Buffer) => (body += c))
+      req.on('end', () => {
+        stub.graphql.push(body)
+        if (stub.mode === 'graphql-errors') return send(200, '{"errors":[{"message":"Something went wrong"}],"data":null}')
+        if (stub.mode === 'graphql-null-user') return send(200, '{"data":{"user":null}}')
+        // Valid data plus an errors entry: GraphQL partial success must still fail (rule 13).
+        if (stub.mode === 'graphql-partial-errors') return send(200, fx('graphql.json').replace(/}\s*$/, ',"errors":[{"message":"partial"}]}'))
+        send(200, fx('graphql.json'))
+      })
+      return
+    }
     if (u.pathname === '/users/LeongJinZhou/repos') {
       if (stub.mode === 'empty') return send(200, '[]')
       if (stub.mode === 'malformed') return send(200, '[{"name":1}]')

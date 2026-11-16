@@ -4,7 +4,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+
+vi.setConfig({ testTimeout: 30_000 }) // cases spawn node refresh.ts (exec timeout 10 s); the 5 s default flakes on Windows under parallel load
 import { loadOverrides, refresh } from '../../scripts/refresh.ts'
 import { ProjectSchema } from '../../scripts/lib/schemas.ts'
 import { startStub, type Stub } from '../helpers/stub.ts'
@@ -29,7 +31,7 @@ async function node(args: string[], env: NodeJS.ProcessEnv) {
 }
 
 const run = (env: Record<string, string> = {}) =>
-  node([script, out], { ...process.env, CONFIG_DIR: cfg, GITHUB_API_URL: stub.url, ...env })
+  node([script, out], { ...process.env, CONFIG_DIR: cfg, GITHUB_API_URL: stub.url, GITHUB_TOKEN: 'tok-default', ...env })
 
 const setup = async (mode: Parameters<typeof startStub>[0]) => {
   stub = await startStub(mode)
@@ -64,7 +66,7 @@ describe('refresh.ts child process (S4, S5, S10, rule 13)', () => {
       languages: { TypeScript: 9000, CSS: 500 },
     })
     expect(list[1]).toMatchObject({ title: 'qiu-ai-video-2026', featured: false, homepage: null })
-    expect(readdirSync(out)).toEqual(['projects.json'])
+    expect(readdirSync(out)).toEqual(['profile', 'projects.json'])
   })
   it('is deterministic: second run is byte-identical (rule 14)', async () => {
     await setup('ok')
@@ -83,7 +85,7 @@ describe('refresh.ts child process (S4, S5, S10, rule 13)', () => {
     expect(r.stderr).toContain('refresh failed')
     expect(r.stderr).not.toContain('tok-should-not-print')
     expect(readFileSync(join(out, 'projects.json')).equals(before)).toBe(true)
-    expect(readdirSync(out)).toEqual(['projects.json'])
+    expect(readdirSync(out)).toEqual(['profile', 'projects.json'])
   })
   it('malicious README is sanitised in projects.json; relative URLs use the default branch (S3, rule 7)', async () => {
     await setup('ok')
@@ -101,6 +103,17 @@ describe('refresh.ts child process (S4, S5, S10, rule 13)', () => {
     await setup('error500')
     expect((await run()).status).not.toBe(0)
     expect(existsSync(join(out, 'projects.json'))).toBe(false)
+  })
+  it.each(['', undefined])('GITHUB_TOKEN %j: exit non-zero before any request or write, clear message', async (tok) => {
+    await setup('ok')
+    const env: NodeJS.ProcessEnv = { ...process.env, CONFIG_DIR: cfg, GITHUB_API_URL: stub.url }
+    if (tok === undefined) delete env.GITHUB_TOKEN
+    else env.GITHUB_TOKEN = tok
+    const r = await node([script, out], env)
+    expect(r.status).toBe(1)
+    expect(r.stderr).toContain('GITHUB_TOKEN is required (GraphQL stats)')
+    expect(readdirSync(out)).toEqual([])
+    expect(stub.seenAuth).toEqual([])
   })
   it('no out dir: usage error, exit 2', async () => {
     await setup('ok')
@@ -125,6 +138,22 @@ describe('refresh() in process', () => {
     expect(await refresh({ outDir: nested, configDir: cfg, baseUrl: stub.url })).toBe(4)
     expect(existsSync(join(nested, 'projects.json'))).toBe(true)
     expect(existsSync(join(nested, 'projects.json.tmp'))).toBe(false)
+  })
+  it('a failed write leaves no partial profile/ and no temp files', async () => {
+    await setup('ok')
+    // projects.json is a non-empty directory, so the final rename fails.
+    mkdirSync(join(out, 'projects.json'), { recursive: true })
+    writeFileSync(join(out, 'projects.json', 'keep'), 'x')
+    await expect(refresh({ outDir: out, configDir: cfg, baseUrl: stub.url })).rejects.toThrow()
+    expect(readdirSync(out)).toEqual(['projects.json'])
+  })
+  it('a second run replaces profile/ wholesale (no stale file survives)', async () => {
+    await setup('ok')
+    expect(await refresh({ outDir: out, configDir: cfg, baseUrl: stub.url })).toBe(4)
+    writeFileSync(join(out, 'profile', 'stale.txt'), 'x')
+    await refresh({ outDir: out, configDir: cfg, baseUrl: stub.url })
+    expect(existsSync(join(out, 'profile', 'stale.txt'))).toBe(false)
+    expect(readdirSync(out).sort()).toEqual(['profile', 'projects.json'])
   })
   it('featured fork reaches projects.json; unlisted fork stays out (S6, rules 1, 4)', async () => {
     await setup('ok')
