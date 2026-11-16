@@ -33,3 +33,13 @@ git clone ... && npm install && npm run dev
 
 ## Author
 **Leong Jin Zhou**, AI Technologist · [GitHub](https://github.com/LeongJinZhou)
+
+## Deploy
+
+The site deploys to GitHub Pages from `main` (`deploy.yml`). A daily workflow (`refresh.yml`, 00:00 UTC) rebuilds project data onto the `data` branch and redeploys.
+
+One-time setup (repo owner, in GitHub settings):
+1. Settings > Pages > Source: GitHub Actions. Turn on Enforce HTTPS.
+2. Settings > Environments > github-pages > Deployment branches: `main` only.
+
+Bootstrap order: merge to `main`, then run the `refresh` workflow manually once (Actions > refresh > Run workflow). It creates the `data` branch and deploys. The first push-triggered deploy fails until that branch exists; this is expected.

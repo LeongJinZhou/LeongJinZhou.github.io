@@ -40,7 +40,7 @@ tests/         unit/ integration/ e2e/ fixtures/github/ fixtures/generated/
 - Files: `scripts/lib/readme.ts`, wired into refresh (`readmeHtml`).
 - Unit: `<script>`, raw HTML, `on*`, `javascript:`/`data:` hrefs removed; relative images -> `raw.githubusercontent.com/<owner>/<repo>/<branch>/...`; relative links -> blob URL; images on any https host kept (badges), non-https images dropped (rule 7); clobber prefix; missing README -> "" (S3, rule 7).
 
-### Slice 3 — Site (ci/check)
+### Slice 3 — Site (ci/check) — DONE (PR #5, merged 2026-11-16)
 - Files: `src/lib/data.ts` (reads `DATA_DIR`, zod, re-applies hidden.txt), `index.astro`, `projects/[name].astro`, `ProjectCard.astro`, `filter.ts` (external module), `global.css`, `tests/fixtures/generated/*`, lighthouserc. Shots copied `DATA_DIR/shots` -> `public/shots` by a one-line `node -e` in the npm prebuild script (`fs.existsSync` check, then `fs.cpSync(src, dst, {recursive: true, force: true})`; works on Windows; no copy script).
 - Design: technical, bold, dark-first; light via `prefers-color-scheme`. Near-black base, two accents (not purple). System + mono fonts, no web fonts. Language-bytes bar and "last refreshed" line. Motion off under reduced motion. Empty filter -> message + reset; no screenshot -> card; LinkedIn unset -> hidden.
 - CSP: no inline `<script>`, no inline `<style>`, no `style=` attributes anywhere (meta CSP default-src 'self' blocks them). Language bar drawn as SVG with `width` attributes. Meta CSP `img-src 'self' https: data:` (badges allowed, founder Gate 1).
