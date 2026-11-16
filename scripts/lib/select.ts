@@ -8,16 +8,17 @@ export interface SelectConfig {
   overrides: Readonly<Record<string, Override>>
 }
 
-/** Rules 1, 2, 5: shown repos, newest push first. */
-export function selectRepos(repos: readonly Repo[], hidden: ReadonlySet<string>): Repo[] {
+/** Rules 1, 2, 4, 5: shown repos, newest push first. A fork is shown only when featured. */
+export function selectRepos(repos: readonly Repo[], hidden: ReadonlySet<string>, featured: readonly string[] = []): Repo[] {
   const hid = new Set([...hidden].map((h) => h.toLowerCase()))
+  const feat = new Set(featured.map((f) => f.toLowerCase()))
   return repos
     .filter(
       (r) =>
         REPO_NAME.test(r.name) &&
         r.owner.login.toLowerCase() === OWNER.toLowerCase() &&
         !r.private &&
-        !r.fork &&
+        (!r.fork || feat.has(r.name.toLowerCase())) &&
         !r.archived &&
         !hid.has(r.name.toLowerCase()) &&
         !SELF.has(r.name.toLowerCase()),

@@ -54,7 +54,7 @@ tests/         unit/ integration/ e2e/ fixtures/github/ fixtures/generated/
 - Verify: two manual runs: first commits `chore: daily refresh`, second commits nothing (rule 14); manual run redeploys (S4); new public repo shows (S5).
 - Bootstrap: commit job creates orphan `data` branch. First push-triggered deploy fails once until first manual refresh (note in PR).
 
-### Slice 5 — Cards and screenshots (refresh/screenshots)
+### Slice 5 — Cards and screenshots (refresh/screenshots) — DONE (PR #7, merged 2026-11-16)
 - Files: `scripts/lib/svg.ts` (card), `scripts/lib/shots.ts`, `scripts/screenshots.ts`.
 - Unit: card SVG escapes `< > & "`; `isBlockedAddress` rejects localhost, 127/8, 0/8, 10/8, 100.64/10, 172.16/12, 192.168/16, 169.254/16, ::, ::1, fc00::/7, IPv4-mapped `::ffff:` forms of all of these, non-https; chooser ok/new, fail/previous, fail/none -> card (rules 8-9).
 - SSRF guard: every request (incl. each redirect hop) resolves its host with `dns.lookup({all:true})`; blocked if ANY address is blocked. Unit test: a hostname resolving to 127.0.0.1 is blocked; a redirect to a blocked host is blocked.

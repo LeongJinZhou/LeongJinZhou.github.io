@@ -31,10 +31,10 @@ The site is static. It has no login, no forms, no visitor data and no server.
 - S10. When the GitHub API or a screenshot fails during a refresh, the last good data stays live and the run fails visibly.
 
 ## 4. Business rules
-1. Projects shown = public, non-fork, non-archived repos owned by `LeongJinZhou`, minus the hide-list, minus `LeongJinZhou` and `LeongJinZhou.github.io` themselves.
+1. Projects shown = public, non-archived repos owned by `LeongJinZhou` that are not forks (a fork is included only when it is on the featured list), minus the hide-list, minus `LeongJinZhou` and `LeongJinZhou.github.io` themselves.
 2. `qiu-ai-video-2026` is included. `Print` is private and so is excluded by rule 1.
 3. Hide-list and featured list are plain files in the portfolio repo, edited by hand.
-4. Featured projects, in order: qiu-cpdc-career-portal, qiu-sld-campus-hub, sld-event-verifier, university-ims-erp, Healthcare-Analysis-POC, SmartRecipe-ContextAware-iOS, Pocket-G, OCR1. A featured repo that becomes hidden or private is skipped.
+4. Featured projects, in order: qiu-cpdc-career-portal, qiu-sld-campus-hub, sld-event-verifier, university-ims-erp, Healthcare-Analysis-POC, SmartRecipe-ContextAware-iOS, Pocket-G, OCR1. A featured repo that becomes hidden or private is skipped. A featured repo may be a fork.
 5. All projects are sorted by last push, newest first.
 6. A project's title, description, topics, language, homepage and last push come from the GitHub API. A per-repo override file may replace title, description or screenshot.
 7. Detail pages render the repo README as sanitised Markdown. Raw HTML is stripped, and relative image links are rewritten to the repo's raw URLs. Images from any https host (including badges such as img.shields.io) are kept; only non-https images are dropped.
@@ -72,7 +72,7 @@ The site is static. It has no login, no forms, no visitor data and no server.
 - S3: Done when an e2e test opens a project page and sees its title, stack, screenshot and working repo link, and a unit test proves README HTML is sanitised (script tags removed) and relative images are rewritten.
 - S4: Done when an integration test runs the refresh script against recorded GitHub API responses and gets the expected `projects.json` and SVG files, and a manual workflow run on GitHub succeeds and redeploys.
 - S5: Done when a unit test proves a new public repo in the API response appears in `projects.json`.
-- S6: Done when a unit test proves hidden, fork, archived and self repos are excluded.
+- S6: Done when a unit test proves hidden, fork, archived and self repos are excluded, and that a featured fork is included.
 - S7: Done when a test checks the generated profile README links to existing banner, stats, languages, snake and screenshot files, and the profile page shows them after a real run.
 - S8: Done when an integration test with a stubbed failing URL produces one issue body listing that URL.
 - S9: Done when a test proves a clean run closes the open issue and a failing run updates rather than duplicates it.
@@ -92,7 +92,7 @@ The site is static. It has no login, no forms, no visitor data and no server.
 2. The featured list starts with the 6 projects listed in rule 4.
 3. Daily refresh time is 00:00 UTC; the health check is Monday 01:00 UTC.
 4. Health failures are reported only as a GitHub issue, which notifies the owner by GitHub's normal email setting.
-5. Forks and archived repos are never shown.
+5. Archived repos are never shown. Forks are shown only when listed in `config/featured.txt` (e.g. Healthcare-Analysis-POC).
 6. Screenshots only for repos with a homepage URL; the others get generated cards.
 7. Detail pages are generated from each README, not hand-written.
 8. Stats cards are self-generated, not from github-readme-stats or similar services.
