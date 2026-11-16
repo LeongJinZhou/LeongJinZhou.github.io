@@ -49,7 +49,7 @@ tests/         unit/ integration/ e2e/ fixtures/github/ fixtures/generated/
 - E2E: 6 sections + hero (S1); filter + reset (S2); detail page title, stack, screenshot, repo link, live link only when homepage (S3); no LinkedIn when empty, no email/phone (rule 17); axe 0 at 375/1280 on home + one detail; no horizontal scroll at 375 (rules 18-19).
 - CI: lhci home + one detail, all four >= 0.90, 3 runs.
 
-### Slice 4 — Deploy + minimal refresh loop (deploy.yml, refresh.yml)
+### Slice 4 — Deploy + minimal refresh loop (deploy.yml, refresh.yml) — DONE (PR #6, merged 2026-11-16)
 - Jobs generate, commit, deploy, verdict.
 - Verify: two manual runs: first commits `chore: daily refresh`, second commits nothing (rule 14); manual run redeploys (S4); new public repo shows (S5).
 - Bootstrap: commit job creates orphan `data` branch. First push-triggered deploy fails once until first manual refresh (note in PR).
