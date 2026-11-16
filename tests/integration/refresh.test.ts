@@ -126,6 +126,18 @@ describe('refresh() in process', () => {
     expect(existsSync(join(nested, 'projects.json'))).toBe(true)
     expect(existsSync(join(nested, 'projects.json.tmp'))).toBe(false)
   })
+  it('featured fork reaches projects.json; unlisted fork stays out (S6, rules 1, 4)', async () => {
+    await setup('ok')
+    const withFork = join(tmp, 'forkcfg')
+    cpSync(cfg, withFork, { recursive: true })
+    writeFileSync(join(withFork, 'featured.txt'), readFileSync(join(cfg, 'featured.txt'), 'utf8') + '\nSome-Fork\n')
+    expect(await refresh({ outDir: out, configDir: withFork, baseUrl: stub.url })).toBe(5)
+    const list = JSON.parse(readFileSync(join(out, 'projects.json'), 'utf8')) as { name: string; featured: boolean }[]
+    expect(list.find((p) => p.name === 'some-fork')).toMatchObject({ featured: true })
+    const plain = join(tmp, 'plain-out')
+    await refresh({ outDir: plain, configDir: cfg, baseUrl: stub.url })
+    expect(readFileSync(join(plain, 'projects.json'), 'utf8')).not.toContain('some-fork')
+  })
   it('rejects 0 projects before touching the out dir', async () => {
     await setup('empty')
     const nested = join(out, 'never')

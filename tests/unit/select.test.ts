@@ -69,6 +69,21 @@ describe('selectRepos (S6, rules 1, 2, 5)', () => {
   })
 })
 
+describe('featured forks', () => {
+  it('includes a fork only when featured (case-insensitive)', () => {
+    expect(names(selectRepos([mk('f', { fork: true }), mk('ok')], none, ['F']))).toEqual(expect.arrayContaining(['f', 'ok']))
+  })
+  it('drops a fork that is not on the featured list', () => {
+    expect(selectRepos([mk('f', { fork: true })], none, ['other'])).toEqual([])
+  })
+  it('hide-list beats featured', () => {
+    expect(selectRepos([mk('f', { fork: true })], new Set(['f']), ['f'])).toEqual([])
+  })
+  it('featured fork that is private or archived is still dropped', () => {
+    expect(selectRepos([mk('p', { fork: true, private: true }), mk('a', { fork: true, archived: true })], none, ['p', 'a'])).toEqual([])
+  })
+})
+
 describe('httpsOnly', () => {
   it.each([
     ['https://a.example.com/x', 'https://a.example.com/x'],
