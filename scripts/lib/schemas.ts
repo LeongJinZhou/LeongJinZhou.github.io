@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
-// Plain file name only: no path, no "..".
-export const SHOT_FILE = /^(?!.*\.\.)[A-Za-z0-9._-]+\.(webp|png|jpg)$/
+// Plain file name only: no path, no "..", no leading dot.
+export const SHOT_FILE = /^(?!\.)(?!.*\.\.)[A-Za-z0-9._-]+\.(webp|png|jpg)$/
 
 export const REPO_NAME = /^(?!\.{1,2}$)[A-Za-z0-9._-]+$/
 

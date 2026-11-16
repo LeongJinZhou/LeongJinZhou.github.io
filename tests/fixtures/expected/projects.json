@@ -16,7 +16,7 @@
     "repoUrl": "https://github.com/LeongJinZhou/qiu-cpdc-career-portal",
     "pushedAt": "2026-11-10T00:00:00Z",
     "stars": 1,
-    "screenshot": null,
+    "screenshot": "qiu-cpdc-career-portal.webp",
     "featured": true,
     "readmeHtml": "<h1>Career Portal</h1>\n<p><img src=\"https://raw.githubusercontent.com/LeongJinZhou/qiu-cpdc-career-portal/trunk/docs/shot.png\" alt=\"shot\"></p>\n<p><a href=\"https://github.com/LeongJinZhou/qiu-cpdc-career-portal/blob/trunk/docs/GUIDE.md\">Guide</a> and <a href=\"#top\">top</a></p>\n<p><img src=\"https://img.shields.io/badge/ts-strict-blue.svg\" alt=\"badge\"></p>"
   },
@@ -35,7 +35,7 @@
     "repoUrl": "https://github.com/LeongJinZhou/qiu-ai-video-2026",
     "pushedAt": "2026-11-05T00:00:00Z",
     "stars": 1,
-    "screenshot": null,
+    "screenshot": "qiu-ai-video-2026.webp",
     "featured": false,
     "readmeHtml": ""
   },
@@ -54,7 +54,7 @@
     "repoUrl": "https://github.com/LeongJinZhou/Pocket-G",
     "pushedAt": "2026-06-01T00:00:00Z",
     "stars": 1,
-    "screenshot": null,
+    "screenshot": "Pocket-G.webp",
     "featured": true,
     "readmeHtml": "<h1>Pocket</h1>\n<p><a>bad</a>  </p>\n<p>safe text</p>"
   },
@@ -73,7 +73,7 @@
     "repoUrl": "https://github.com/LeongJinZhou/OCR1",
     "pushedAt": "2026-03-01T00:00:00Z",
     "stars": 1,
-    "screenshot": null,
+    "screenshot": "OCR1.webp",
     "featured": true,
     "readmeHtml": ""
   }

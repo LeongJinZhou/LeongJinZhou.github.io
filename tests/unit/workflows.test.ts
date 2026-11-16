@@ -81,11 +81,11 @@ describe('workflows', () => {
     expect(on).toHaveProperty('workflow_dispatch')
     expect(r).toHaveProperty('concurrency.group', 'refresh')
     expect(r).toHaveProperty('concurrency.cancel-in-progress', false)
-    expect(jobs('refresh.yml').map(([n]) => n).sort()).toEqual(['commit', 'deploy', 'generate', 'verdict'])
+    expect(jobs('refresh.yml').map(([n]) => n).sort()).toEqual(['commit', 'deploy', 'generate', 'screenshots', 'verdict'])
   })
   it('refresh: commit job has no npm/node, copies allowlisted paths, rejects symlinks/hidden', () => {
     const c = Object.fromEntries(jobs('refresh.yml')).commit as Obj
-    expect(c.needs).toBe('generate')
+    expect(c.needs).toEqual(['generate', 'screenshots'])
     expect(c.if).toBe("github.ref == 'refs/heads/main'")
     const runs = stepsOf(c).map((s) => String(s.run ?? '')).join('\n')
     expect(runs).not.toMatch(/\b(npm|npx|node)\b/)
@@ -109,7 +109,50 @@ describe('workflows', () => {
   it('refresh: verdict always runs and needs every job', () => {
     const v = Object.fromEntries(jobs('refresh.yml')).verdict as Obj
     expect(v.if).toBe('always()')
-    expect(v.needs).toEqual(['generate', 'commit', 'deploy'])
+    expect(v.needs).toEqual(['generate', 'screenshots', 'commit', 'deploy'])
+  })
+  it('refresh: screenshots job is read-only, secret-free, and feeds commit via artifact final', () => {
+    const j = Object.fromEntries(jobs('refresh.yml'))
+    const s = j.screenshots as Obj
+    expect(s.needs).toBe('generate')
+    expect(s.permissions).toEqual({ contents: 'read' })
+    expect(JSON.stringify(s)).not.toMatch(/secrets\./)
+    expect(JSON.stringify(s)).not.toContain('GITHUB_TOKEN')
+    expect(s.outputs).toEqual({ failed: '${{ steps.shots.outputs.failed }}' })
+    const steps = stepsOf(s)
+    expect(steps.some((x) => x.run === 'npx playwright install --with-deps chromium')).toBe(true)
+    expect(steps.find((x) => x.id === 'shots')?.run).toBe('node scripts/screenshots.ts generated previous/shots')
+    const data = steps.find((x) => obj(x.with ?? {}, 'with').ref === 'data')
+    expect(data?.['continue-on-error']).toBe(true)
+    const up = steps.find((x) => String(x.uses).startsWith('actions/upload-artifact@'))
+    expect(up?.with).toMatchObject({ name: 'final', 'if-no-files-found': 'error', 'include-hidden-files': false })
+    const dls = stepsOf(j.commit as Obj).filter((x) => String(x.uses).startsWith('actions/download-artifact@'))
+    expect(dls.map((d) => obj(d.with, 'with').name).sort()).toEqual(['final', 'generated'])
+    const commitEnv = obj(stepsOf(j.commit as Obj).find((x) => x.name === 'Commit to data branch')?.env, 'env')
+    expect(commitEnv.GENERATED).not.toBe(commitEnv.FINAL)
+  })
+  it('refresh: screenshots job lifts the AppArmor userns restriction before running Chromium', () => {
+    const steps = stepsOf((Object.fromEntries(jobs('refresh.yml')).screenshots as Obj))
+    const sysctl = steps.findIndex((x) => x.run === 'sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0')
+    const run = steps.findIndex((x) => x.id === 'shots')
+    expect(sysctl).toBeGreaterThan(-1)
+    expect(sysctl).toBeLessThan(run)
+  })
+  it('ci: installs Chromium and lifts the AppArmor userns restriction before unit/integration tests', () => {
+    const steps = jobs('ci.yml').flatMap(([, j]) => stepsOf(j))
+    const at = (run: string) => steps.findIndex((x) => x.run === run)
+    const tests = at('npm run test:coverage')
+    expect(tests).toBeGreaterThan(-1)
+    expect(at('sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0')).toBeGreaterThan(-1)
+    expect(at('sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0')).toBeLessThan(tests)
+    expect(at('npx playwright install --with-deps chromium')).toBeGreaterThan(-1)
+    expect(at('npx playwright install --with-deps chromium')).toBeLessThan(tests)
+  })
+  it('refresh: verdict fails on screenshots failed=true, read through env', () => {
+    const v = Object.fromEntries(jobs('refresh.yml')).verdict as Obj
+    const st = stepsOf(v)[0] as Obj
+    expect(obj(st.env, 'env').SHOTS_FAILED).toBe('${{ needs.screenshots.outputs.failed }}')
+    expect(String(st.run)).toContain('"$SHOTS_FAILED" != true')
   })
   it('deploy.yml: triggers, no configure-pages, deploy job settings', () => {
     expect([...triggers('deploy.yml')].sort()).toEqual(['push', 'workflow_call', 'workflow_dispatch'])

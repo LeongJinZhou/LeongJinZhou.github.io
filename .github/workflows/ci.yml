@@ -24,8 +24,10 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
-      - run: npm run test:coverage
       - run: npx playwright install --with-deps chromium
+      # Screenshot tests launch Chromium with its sandbox; ubuntu-latest AppArmor blocks it otherwise.
+      - run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - run: npm run test:coverage
       - run: npm run build:ci
       - run: npm run test:e2e
       - run: npm run lhci

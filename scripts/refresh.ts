@@ -3,6 +3,7 @@ import { join, resolve } from 'node:path'
 import { z } from 'zod'
 import { fetchLanguages, fetchReadme, fetchRepos, OWNER } from './lib/github.ts'
 import { renderReadme } from './lib/readme.ts'
+import { shotName } from './lib/shots.ts'
 import { buildProjects, selectRepos } from './lib/select.ts'
 import { OverrideSchema, ProjectSchema, REPO_NAME, type Languages, type Override } from './lib/schemas.ts'
 
@@ -56,7 +57,8 @@ export async function refresh(o: RefreshOpts): Promise<number> {
     }
   }
 
-  const built = buildProjects(repos, languages, { featured, overrides }).map((p) => ({ ...p, readmeHtml: readmes[p.name] ?? '' }))
+  const built = buildProjects(repos, languages, { featured, overrides })// Every project without an override image points at shots/<name>.webp; the screenshots job only writes those files.
+    .map((p) => ({ ...p, screenshot: p.screenshot ?? `${shotName(p.name)}.webp`, readmeHtml: readmes[p.name] ?? '' }))
   const projects = z.array(ProjectSchema).parse(built)
   mkdirSync(o.outDir, { recursive: true })
   const tmp = join(o.outDir, 'projects.json.tmp')
