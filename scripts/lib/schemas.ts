@@ -41,7 +41,9 @@ export type Override = z.infer<typeof OverrideSchema>
 
 export const SettingsSchema = z
   .object({
-    health: z.object({ retries: z.number().int().positive(), timeoutMs: z.number().int().positive() }).strict(),
+    health: z
+      .object({ retries: z.number().int().positive(), timeoutMs: z.number().int().positive(), maxPages: z.number().int().positive() })
+      .strict(),
     shot: z
       .object({
         width: z.number().int().positive(),

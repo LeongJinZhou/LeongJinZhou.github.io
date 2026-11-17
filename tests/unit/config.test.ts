@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { OverrideSchema, REPO_NAME, RepoSchema, SettingsSchema } from '../../scripts/lib/schemas.ts'
-import { loadOverrides, readList } from '../../scripts/refresh.ts'
+import { readList } from '../../scripts/lib/list.ts'
+import { loadOverrides } from '../../scripts/refresh.ts'
 
 const cfg = (f: string) => fileURLToPath(new URL(`../../config/${f}`, import.meta.url))
 
@@ -13,8 +14,9 @@ describe('schemas', () => {
   })
   it('settings rejects unknown fields', () => {
     expect(() =>
-      SettingsSchema.parse({ health: { retries: 3, timeoutMs: 1 }, shot: { width: 1, height: 1, timeoutMs: 1 }, extra: 1 }),
+      SettingsSchema.parse({ health: { retries: 3, timeoutMs: 1, maxPages: 1 }, shot: { width: 1, height: 1, timeoutMs: 1 }, extra: 1 }),
     ).toThrow()
+    expect(() => SettingsSchema.parse({ health: { retries: 3, timeoutMs: 1, maxPages: 0 }, shot: { width: 1, height: 1, timeoutMs: 1 } })).toThrow()
   })
   it('repo rejects wrong types', () => {
     expect(() => RepoSchema.parse({ name: 5 })).toThrow()
@@ -40,7 +42,7 @@ describe('schema hardening', () => {
 describe('repo config files', () => {
   it('settings.json is valid with the planned numbers', () => {
     expect(SettingsSchema.parse(JSON.parse(readFileSync(cfg('settings.json'), 'utf8')))).toEqual({
-      health: { retries: 3, timeoutMs: 15000 },
+      health: { retries: 3, timeoutMs: 15000, maxPages: 50 },
       shot: { width: 1280, height: 800, timeoutMs: 30000 },
     })
   })
