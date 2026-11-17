@@ -36,7 +36,7 @@ git clone ... && npm install && npm run dev
 
 ## Deploy
 
-The site deploys to GitHub Pages from `main` (`deploy.yml`). A daily workflow (`refresh.yml`, 00:00 UTC) rebuilds project data onto the `data` branch and redeploys.
+The site deploys to GitHub Pages from `main` (`deploy.yml`). A daily workflow (`refresh.yml`, 00:17 UTC) rebuilds project data onto the `data` branch and redeploys.
 
 One-time setup (repo owner, in GitHub settings):
 1. Settings > Pages > Source: GitHub Actions. Turn on Enforce HTTPS.

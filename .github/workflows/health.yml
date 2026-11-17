@@ -2,7 +2,7 @@ name: health
 
 on:
   schedule:
-    - cron: '0 1 * * 1'
+    - cron: '17 1 * * 1' # off the hour: GitHub drops top-of-hour crons under load
   workflow_dispatch:
 
 permissions: {}

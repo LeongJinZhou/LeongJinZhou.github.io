@@ -78,7 +78,7 @@ describe('workflows', () => {
   it('refresh: cron, concurrency, job set', () => {
     const r = doc('refresh.yml')
     const on = obj(r.on, 'on')
-    expect(obj((on.schedule as unknown[])[0], 'schedule').cron).toBe('0 0 * * *')
+    expect(obj((on.schedule as unknown[])[0], 'schedule').cron).toBe('17 0 * * *')
     expect(on).toHaveProperty('workflow_dispatch')
     expect(r).toHaveProperty('concurrency.group', 'refresh')
     expect(r).toHaveProperty('concurrency.cancel-in-progress', false)
@@ -217,7 +217,7 @@ describe('workflows', () => {
   it('health: weekly cron, dispatch, own concurrency, scan read-only then report with issues: write', () => {
     const h = doc('health.yml')
     const on = obj(h.on, 'on')
-    expect(obj((on.schedule as unknown[])[0], 'schedule').cron).toBe('0 1 * * 1')
+    expect(obj((on.schedule as unknown[])[0], 'schedule').cron).toBe('17 1 * * 1')
     expect(on).toHaveProperty('workflow_dispatch')
     expect(h).toHaveProperty('concurrency.group', 'health')
     expect(h).toHaveProperty('concurrency.cancel-in-progress', false)

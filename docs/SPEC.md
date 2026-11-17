@@ -41,12 +41,12 @@ The site is static. It has no login, no forms, no visitor data and no server.
 7a. The profile README and the site Skills section show technology badges (shields.io style) for the skills in `config/site.json`.
 8. Screenshots are captured only for repos with a homepage URL, at 1280×800, saved as WebP. Repos without one get a generated card image (name, language, topics).
 9. A screenshot that fails keeps the previous image. If none exists, the generated card is used.
-10. Daily refresh runs at 00:00 UTC (08:00 Malaysia time) and can be started by hand.
+10. Daily refresh runs at 00:17 UTC (08:17 Malaysia time; off the hour because GitHub drops top-of-hour schedules) and can be started by hand.
 11. Profile stats (repos, stars, commits in the last year, PRs, top 6 languages by bytes across shown repos) are computed in the Action and written as SVG files into the profile repo. No third-party image servers.
 12. Contribution snake: SVG regenerated daily, in dark and light variants.
 13. A refresh that fetches 0 projects, or gets any API error, does not commit or deploy anything.
 14. Generated commits are made only when files actually changed, with message `chore: daily refresh`.
-15. Health check runs weekly, Monday 01:00 UTC, and by hand. It checks every link on the site and profile README, plus every live demo, except URLs matching a line in `config/health-ignore.txt` (LinkedIn pre-listed, since it answers bots with HTTP 999). Each URL is retried up to 3 times. Only HTTP 2xx/3xx counts as working, and the timeout is 15 s.
+15. Health check runs weekly, Monday 01:17 UTC, and by hand. It checks every link on the site and profile README, plus every live demo, except URLs matching a line in `config/health-ignore.txt` (LinkedIn and openai.com, which answer bots with HTTP 999/403, and localhost, used in project setup docs). Each URL is retried up to 3 times. Only HTTP 2xx/3xx counts as working, and the timeout is 15 s.
 16. At most one open health issue (label `health-check`). A new failure updates that issue rather than opening a duplicate. A clean run closes it.
 17. Contact: GitHub and LinkedIn only. No email or phone is published. The LinkedIn URL lives in one config value. Until it is set, the LinkedIn link is hidden.
 18. Style: bold, techy, dark-first with a light variant. Gradients and motion respect `prefers-reduced-motion`.
@@ -90,7 +90,7 @@ The site is static. It has no login, no forms, no visitor data and no server.
 ## 9. Assumptions made
 1. LinkedIn URL is supplied by the owner later. The link stays hidden until then.
 2. The featured list starts with the 6 projects listed in rule 4.
-3. Daily refresh time is 00:00 UTC; the health check is Monday 01:00 UTC.
+3. Daily refresh time is 00:17 UTC; the health check is Monday 01:17 UTC.
 4. Health failures are reported only as a GitHub issue, which notifies the owner by GitHub's normal email setting.
 5. Archived repos are never shown. Forks are shown only when listed in `config/featured.txt` (e.g. Healthcare-Analysis-POC).
 6. Screenshots only for repos with a homepage URL; the others get generated cards.
