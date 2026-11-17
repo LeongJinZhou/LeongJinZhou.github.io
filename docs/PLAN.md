@@ -62,7 +62,7 @@ tests/         unit/ integration/ e2e/ fixtures/github/ fixtures/generated/
 - Screenshot failure: `screenshots` job keeps old images, exits 0 and sets job output `failed=true`; `commit` and `deploy` run normally; `verdict` (`needs: screenshots`) fails the run when `failed == 'true'` (Q7, rule 9).
 - Check: a manual run with a forced failing screenshot still commits and deploys, and the run ends red.
 
-### Slice 6 — Profile (refresh/generate + refresh/profile)
+### Slice 6 — Profile (refresh/generate + refresh/profile) — MERGED (PR #9, 2026-11-16); S7 live check waits for PROFILE_REPO_TOKEN
 - Files: `svg.ts` (banner, stats, langs, dark + light), `profile-readme.ts`, `profile/README.template.md`, snk step, profile job.
 - Stats GraphQL: `user(login:"LeongJinZhou"){contributionsCollection, pullRequests}`, never `viewer` (with GITHUB_TOKEN viewer is the bot).
 - Unit: top 6 languages by bytes across shown repos; stats from fixture GraphQL; template keeps hand-written lines, replaces only between markers; missing marker -> error; featured rows follow featured.txt; LinkedIn row absent when unset (rules 11, 17).

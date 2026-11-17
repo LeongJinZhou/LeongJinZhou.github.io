@@ -133,16 +133,16 @@ function guardedLookup(lookup: Lookup) {
 
 /** One HTTP(S) request, no redirects followed, body capped at MAX_BODY, whole request limited to timeoutMs. */
 export function guardedRequest(url: URL, o: ReqOpts): Promise<Res> {
-  const plain = url.host === o.allowHost
+  const trusted = url.host === o.allowHost
   return new Promise((resolve, reject) => {
-    const req = (plain ? http : https).request(
+    const req = (url.protocol === 'http:' ? http : https).request(
       url,
       {
         method: o.method,
         headers: o.headers,
         agent: false,
         signal: AbortSignal.timeout(o.timeoutMs),
-        ...(plain ? {} : { lookup: guardedLookup(o.lookup ?? dnsLookup) as never }),
+        ...(trusted ? {} : { lookup: guardedLookup(o.lookup ?? dnsLookup) as never }),
       },
       (res) => {
         const chunks: Buffer[] = []

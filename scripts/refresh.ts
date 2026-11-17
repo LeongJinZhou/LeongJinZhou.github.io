@@ -2,6 +2,7 @@ import { readdirSync, readFileSync, renameSync, mkdirSync, writeFileSync, rmSync
 import { dirname, join, resolve } from 'node:path'
 import { z } from 'zod'
 import { fetchContributions, fetchLanguages, fetchReadme, fetchRepos, OWNER } from './lib/github.ts'
+import { readList } from './lib/list.ts'
 import { buildProfile } from './lib/profile.ts'
 import { renderReadme } from './lib/readme.ts'
 import { shotName } from './lib/shots.ts'
@@ -9,13 +10,6 @@ import { buildProjects, selectRepos } from './lib/select.ts'
 import { OverrideSchema, ProjectSchema, REPO_NAME, SiteSchema, type Languages, type Override } from './lib/schemas.ts'
 
 const DEFAULT_TEMPLATE = join(import.meta.dirname, '..', 'profile', 'README.template.md')
-
-export function readList(file: string): string[] {
-  return readFileSync(file, 'utf8')
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter((l) => l && !l.startsWith('#'))
-}
 
 export function loadOverrides(dir: string): Record<string, Override> {
   const out: Record<string, Override> = Object.create(null)

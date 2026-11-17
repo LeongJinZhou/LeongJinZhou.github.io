@@ -29,11 +29,12 @@ const WRITE_ALLOW: Record<string, Obj> = {
   'refresh.yml:commit': { contents: 'write' },
   'deploy.yml:deploy': { pages: 'write', 'id-token': 'write' },
   'refresh.yml:deploy': { contents: 'read', pages: 'write', 'id-token': 'write' },
+  'health.yml:report': { issues: 'write', contents: 'read' },
 }
 
 describe('workflows', () => {
-  it('has ci, deploy and refresh', () => {
-    expect(files).toEqual(expect.arrayContaining(['ci.yml', 'deploy.yml', 'refresh.yml']))
+  it('has ci, deploy, refresh and health', () => {
+    expect(files).toEqual(expect.arrayContaining(['ci.yml', 'deploy.yml', 'refresh.yml', 'health.yml']))
   })
   describe.each(files)('%s', (f) => {
     it('top-level permissions are empty', () => expect(doc(f).permissions).toEqual({}))
@@ -212,6 +213,29 @@ describe('workflows', () => {
     const st = stepsOf(v)[0] as Obj
     expect(obj(st.env, 'env').SHOTS_FAILED).toBe('${{ needs.screenshots.outputs.failed }}')
     expect(String(st.run)).toContain('"$SHOTS_FAILED" != true')
+  })
+  it('health: weekly cron, dispatch, own concurrency, scan read-only then report with issues: write', () => {
+    const h = doc('health.yml')
+    const on = obj(h.on, 'on')
+    expect(obj((on.schedule as unknown[])[0], 'schedule').cron).toBe('0 1 * * 1')
+    expect(on).toHaveProperty('workflow_dispatch')
+    expect(h).toHaveProperty('concurrency.group', 'health')
+    expect(h).toHaveProperty('concurrency.cancel-in-progress', false)
+    const j = Object.fromEntries(jobs('health.yml'))
+    expect(Object.keys(j).sort()).toEqual(['report', 'scan'])
+    expect(j.scan?.permissions).toEqual({ contents: 'read' })
+    expect(j.report?.needs).toBe('scan')
+    expect(j.report?.permissions).toEqual({ issues: 'write', contents: 'read' })
+  })
+  it('health: no npm ci, only the already-pinned actions, token only through env', () => {
+    const runs = allSteps('health.yml').map((s) => String(s.run ?? '')).join('\n')
+    expect(runs).not.toMatch(/\bnpm\b|\bnpx\b/)
+    expect(runs).toContain('node scripts/health-scan.ts failures.json')
+    expect(runs).toContain('node scripts/health-report.ts failures.json')
+    const pinned = new Set(raw('refresh.yml').match(/uses: (\S+@[0-9a-f]{40})/g))
+    for (const s of allSteps('health.yml').filter((x) => x.uses)) expect(pinned, String(s.uses)).toContain(`uses: ${String(s.uses)}`)
+    const rep = stepsOf(Object.fromEntries(jobs('health.yml')).report as Obj).find((s) => String(s.run).includes('health-report'))
+    expect(obj(rep?.env, 'env')).toMatchObject({ GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}' })
   })
   it('deploy.yml: triggers, no configure-pages, deploy job settings', () => {
     expect([...triggers('deploy.yml')].sort()).toEqual(['push', 'workflow_call', 'workflow_dispatch'])
