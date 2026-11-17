@@ -59,8 +59,8 @@ describe('repo config files', () => {
   it('featured.txt has the 8 projects in rule 4 order', () => {
     expect(readList(cfg('featured.txt'))).toEqual(featured)
   })
-  it('health-ignore lists LinkedIn; hidden.txt has only comments', () => {
-    expect(readList(cfg('health-ignore.txt'))).toEqual(['linkedin.com'])
+  it('health-ignore lists bot-blocking hosts and localhost; hidden.txt has only comments', () => {
+    expect(readList(cfg('health-ignore.txt'))).toEqual(['linkedin.com', 'openai.com', 'localhost'])
     expect(readList(cfg('hidden.txt'))).toEqual([])
   })
   it('every featured repo has a valid override with title and description', () => {

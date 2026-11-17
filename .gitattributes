@@ -1,0 +1,2 @@
+# LF everywhere: byte-equal tests broke on Windows autocrlf checkouts
+* text=auto eol=lf
